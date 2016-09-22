@@ -73,12 +73,14 @@
     "babel-polyfill": "^6.9.1",
     "babel-preset-es2015": "^6.9.0",
     "babel-runtime": "^6.5.0",
+    "eslint": "^3.5.0",
+    "eslint-config-google": "^0.6.0",
     "npm-run-all": "^3.1.0"
   },
   "scripts": {
-    "start:dev": "node src/start.js",
-    "start": "npm-run-all lint test node src/start.js",
+    "start": "npm-run-all lint test server",
     "lint": "eslint .",
-    "test": ""
+    "test": "",
+    "server": "node src/index.js"
   }
 }
