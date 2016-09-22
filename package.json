@@ -1,0 +1,72 @@
+{
+  "name": "servre",
+  "version": "1.0.0",
+  "description": "Server for sayhi.ai.",
+  "main": "server.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://bitbucket.org/sayhi-ai/server"
+  },
+  "keywords": [
+    "conversational",
+    "bots",
+    "natural",
+    "language",
+    "human",
+    "conversation",
+    "say",
+    "hi",
+    "ai",
+    "artificial",
+    "intelligence",
+    "answers",
+    "responses",
+    "api",
+    "make",
+    "your",
+    "bot",
+    "build",
+    "tool",
+    "persona",
+    "for"
+  ],
+  "tags": [
+    "conversational",
+    "bots",
+    "natural",
+    "language",
+    "human",
+    "conversation",
+    "say",
+    "hi",
+    "ai",
+    "artificial",
+    "intelligence",
+    "answers",
+    "responses",
+    "api",
+    "make",
+    "your",
+    "bot",
+    "build",
+    "tool",
+    "persona",
+    "for"
+  ],
+  "author": "sayhi-ai",
+  "license": "GPL",
+  "bugs": {
+    "url": "https://bitbucket.org/sayhi-ai/server/issues"
+  },
+  "homepage": "https://sayhi.ai",
+  "engines": {
+    "npm": ">=3.0.0",
+    "node": ">=5.0.0"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+  },
+  "scripts": {
+  }
+}
