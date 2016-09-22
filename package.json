@@ -64,7 +64,8 @@
     "node": ">=5.0.0"
   },
   "dependencies": {
-    "express": "^4.14.0"
+    "express": "^4.14.0",
+    "fs": "0.0.1-security"
   },
   "devDependencies": {
     "babel-core": "^6.9.1",
@@ -75,12 +76,21 @@
     "babel-runtime": "^6.5.0",
     "eslint": "^3.5.0",
     "eslint-config-google": "^0.6.0",
-    "npm-run-all": "^3.1.0"
+    "nodemon": "^1.10.2",
+    "npm-run-all": "^3.1.0",
+    "webpack": "^1.13.2"
   },
   "scripts": {
-    "start": "npm-run-all lint test server",
-    "lint": "eslint .",
+    "clean": "rm build",
+    "lint": "eslint ./src",
     "test": "",
-    "server": "node src/index.js"
+    "prebuild": "npm-run-all lint test",
+    "build": "webpack --progress --config tools/webpack.config.prod.js",
+    "build:dev": "webpack --progress --config tools/webpack.config.dev.js",
+    "build:dev:watch": "webpack --progress --config tools/webpack.config.dev.js --watch",
+    "server:dev": "nodemon dev/start.js",
+    "server:prod": "node build/start.js",
+    "start": "npm-run-all build server:prod",
+    "dev": "npm-run-all --parallel build:dev:watch server:dev"
   }
 }

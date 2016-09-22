@@ -2,12 +2,12 @@ import express from "express";
 
 const app = express();
 
-// Serve bundle
-app.get('*.js', (req, res) => {
+app.get('/', function(req, res) {
+  res.send('this is awesome request to homepage');
 });
 
-// Serve index page
-app.get('*', (req, res) => {
+app.get('/login', function(req, res) {
+  res.send('login request');
 });
 
 // Express server
