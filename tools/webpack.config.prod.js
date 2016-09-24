@@ -12,7 +12,7 @@ fs.readdirSync('node_modules')
   });
 
 module.exports = {
-  entry: './src/server.js',
+  entry: './src/router.js',
   target: 'node',
   output: {
     path: "./build",

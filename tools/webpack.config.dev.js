@@ -12,7 +12,7 @@ fs.readdirSync('node_modules')
   });
 
 module.exports = {
-  entry: './src/server.js',
+  entry: './src/router.js',
   devtool: 'sourcemap',
   target: 'node',
   output: {
