@@ -19,8 +19,8 @@ app.post('/', (req, res) => {
 
   gcClient.fetch(data, response => {
     console.log(response.data.allUsers[0]);
-  }, response => {
-    console.log(response);
+  }, error => {
+    console.log(error);
   });
 
   res.send('recieved data: ' + data);
