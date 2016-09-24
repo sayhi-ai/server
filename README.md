@@ -1,6 +1,6 @@
 #Server
 
-json to graph cool should look like this: 
+sample json to graphcool:
 
 ```json
 {
