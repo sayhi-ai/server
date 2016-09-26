@@ -2,7 +2,7 @@ require('es6-promise').polyfill();
 import express from "express";
 import bodyParser from "body-parser";
 import GCClient from "./graphcoolClient";
-import ENV_VARS from "./ENV_VARS";
+import UserHandler from "./account/userHandler";
 
 // Set up express server
 const app = express();
@@ -11,43 +11,25 @@ app.use(bodyParser.urlencoded({
   extended: true
 }));
 
-// Set up graph cool client
+// Set up handlers
 const gcClient = new GCClient();
-
-// Create an account
-app.post('/create-account', (req, res) => {
-  let data = req.body;
-  let query = {
-    data: "mutation {createUser(" +
-      "firstName: \\\"" + data.firstName +
-      "\\\", lastName: \\\"" + data.lastName +
-      "\\\", email: \\\"" + data.email +
-      "\\\", password: \\\"" + data.password + "\\\")" +
-      "{id}}",
-    token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
-  };
-
-  gcClient.query(query, response => {
-    res.send(response);
-  }, error => {
-    res.send("Error during login");
-  });
-});
+const userHandler = new UserHandler(gcClient);
 
 // Login
 app.post('/login', (req, res) => {
   let data = req.body;
-  let query = {
-    data: "mutation {signinUser(email: \\\"" + data.email +
-      "\\\", password: \\\"" + data.password + "\\\")" +
-      "{user{firstName, email}, token}}"
-  };
+  userHandler.login(data.email, data.password,
+    response => res.send(response),
+    error => res.send("Error during login"));
+});
 
-  gcClient.login(query, response => {
-    res.send(response);
-  }, error => {
-    res.send("Error during login");
-  });
+// Create an account
+app.post('/create-account', (req, res) => {
+  let data = req.body;
+  userHandler.addUser(data.firstName, data.lastName, data.email,
+    data.password,
+    response => res.send(response),
+    error => res.send("Error during login"));
 });
 
 // Change password

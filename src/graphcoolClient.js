@@ -87,6 +87,7 @@ export default class {
       opNameFull = '"operationName":"' + query.opName + '"';
     }
 
-    return '{' + dataFull + ',' + varsFull + ',' + opNameFull + '}';
+    let queryFinal = '{' + dataFull + ',' + varsFull + ',' + opNameFull + '}';
+    return queryFinal.replace(/(\r\n|\n|\r| )/gm, '');
   }
 }
