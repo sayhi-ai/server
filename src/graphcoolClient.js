@@ -2,8 +2,8 @@ import fetch from "isomorphic-fetch";
 import ENV_VARS from "./ENV_VARS";
 
 export default class {
-  fetch(query, success, error) {
-    this._doRequest(ENV_VARS.GRAPHCOOL_URL,
+  login(query, success, error) {
+    this._safeQuery(ENV_VARS.CONSTANTS.GRAPHCOOL_URL,
       "POST", {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
@@ -12,7 +12,18 @@ export default class {
       error);
   }
 
-  _doRequest(url, method, headers, bodyFunc, successFunc, errorFunc) {
+  query(query, success, error) {
+    this._safeQuery(ENV_VARS.CONSTANTS.GRAPHCOOL_URL,
+    "POST", {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + query.token
+    }, () => this._createQuery(query),
+    success,
+    error);
+  }
+
+  _safeQuery(url, method, headers, bodyFunc, successFunc, errorFunc) {
     try {
       fetch(url, {
         method: method,
