@@ -13,19 +13,49 @@ app.use(bodyParser.urlencoded({
 // Set up graph cool client
 const gcClient = new GCClient();
 
-// Routing
+app.post('/create-account', (req, res) => {
+  let data = req.body;
+  let query = {
+    data: "mutation {createUser(" +
+      "firstName: \\\"" + data.firstName +
+      "\\\", lastName: \\\"" + data.lastName +
+      "\\\", email: \\\"" + data.email +
+      "\\\", password: \\\"" + data.password + "\\\")" +
+      "{id}}"
+  };
+
+  gcClient.fetch(query, response => {
+    res.send(response);
+  }, error => {
+    res.send("Error during login");
+  });
+});
+
 app.post('/login', (req, res) => {
   let data = req.body;
   let query = {
     data: "mutation {signinUser(email: \\\"" + data.email +
-    "\\\", password: \\\"" + data.password + "\\\"){token}}"
+      "\\\", password: \\\"" + data.password + "\\\")" +
+      "{user{firstName, email}, token}}"
   };
 
-  gcClient.login(query, response => {
-    res.send(response.data.signinUser.token);
+  gcClient.fetch(query, response => {
+    res.send(response);
   }, error => {
     res.send("Error during login");
   });
+});
+
+app.post('/change-password', (req, res) => {
+
+});
+
+app.post('/add-mailing-list', (req, res) => {
+
+});
+
+app.post('/remove-mailing-list', (req, res) => {
+
 });
 
 // Start express server
