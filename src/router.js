@@ -14,20 +14,18 @@ app.use(bodyParser.urlencoded({
 const gcClient = new GCClient();
 
 // Routing
-app.post('/', (req, res) => {
+app.post('/login', (req, res) => {
   let data = req.body;
+  let query = {
+    data: "mutation {signinUser(email: \\\"" + data.email +
+    "\\\", password: \\\"" + data.password + "\\\"){token}}"
+  };
 
-  gcClient.fetch(data, response => {
-    console.log(response.data.allUsers[0]);
+  gcClient.login(query, response => {
+    res.send(response.data.signinUser.token);
   }, error => {
-    console.log(error);
+    res.send("Error during login");
   });
-
-  res.send('recieved data: ' + data);
-});
-
-app.get('/login', (req, res) => {
-  res.send('login request');
 });
 
 // Start express server
