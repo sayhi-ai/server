@@ -2,9 +2,7 @@ require('es6-promise').polyfill();
 import express from "express";
 import bodyParser from "body-parser";
 import ServiceHandler from "./services/serviceHandler";
-import MailingListHandler from "./account/mailingListHandler";
-import UserHandler from "./account/userHandler";
-import VerificationHandler from "./account/verificationHandler";
+import FunctionHandler from "./functions/functionHandler";
 
 // Set up express server
 const app = express();
@@ -15,19 +13,25 @@ app.use(bodyParser.urlencoded({
 
 // Set up handlers
 const serviceHandler = new ServiceHandler();
-const mailingListHandler = new MailingListHandler(serviceHandler);
-const userHandler = new UserHandler(serviceHandler);
-const verificationHandler = new VerificationHandler(serviceHandler);
+const functionHandler = new FunctionHandler(serviceHandler);
 
 // Test
 app.get('/test', (req, res) => {
+  functionHandler.getActivationHandler().sendActivationRequest(
+    "julianbrendl@gmail.com", "Julian",
+    response => res.send(response),
+    error => res.send(error));
+});
 
+// Activate account
+app.get('/activate', (req, res) => {
+  console.log(req.query);
 });
 
 // Login
 app.post('/login', (req, res) => {
   let data = req.body;
-  userHandler.login(data.email, data.password,
+  functionHandler.getUserHandler.login(data.email, data.password,
     response => res.send(response),
     error => res.send("Error during login"));
 });
@@ -35,8 +39,8 @@ app.post('/login', (req, res) => {
 // Create an account
 app.post('/create-account', (req, res) => {
   let data = req.body;
-  userHandler.addUser(data.firstName, data.lastName, data.email,
-    data.password,
+  functionHandler.getUserHandler.addUser(data.firstName, data.lastName,
+    data.email, data.password,
     response => res.send(response),
     error => res.send("Error creating an account: " + error));
 });
@@ -49,7 +53,7 @@ app.post('/change-password', (req, res) => {
 // Add email to mailing list
 app.post('/subscribe', (req, res) => {
   let data = req.body;
-  mailingListHandler.addToMailingList(data.email,
+  functionHandler.getMailingListHandler().addToMailingList(data.email,
     response => res.send(response),
     error => res.send("Error adding to mailing list: " + error));
 });
@@ -57,7 +61,7 @@ app.post('/subscribe', (req, res) => {
 // Remove email from mailing list
 app.post('/unsubscribe', (req, res) => {
   let data = req.body;
-  mailingListHandler.removeFromMailingList(data.email,
+  functionHandler.getMailingListHandler().removeFromMailingList(data.email,
     response => res.send(response),
     error => res.send("Error adding to mailing list: " + error));
 });

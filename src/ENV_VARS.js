@@ -14,11 +14,13 @@ const CONSTANTS = {
 if (process.env.NODE_ENV === "production") {
   ENV_VARS = {
     ROOT: "build",
+    BASE_URL: "https://api.sayhi.ai",
     CONSTANTS: CONSTANTS
   };
 } else {
   ENV_VARS = {
     ROOT: "dev",
+    BASE_URL: "http://localhost:8080",
     CONSTANTS: CONSTANTS
   };
 }
