@@ -24,6 +24,43 @@ export default class {
     });
   }
 
+  removeFromMailingList(email, successFunc, errorFunc) {
+    this._getMailingListId(email, response => {
+      let query = {
+        data: `
+          mutation {
+            deleteMailingList(id: \\"` + response.data.MailingList.id + `\\") {
+              id
+            }
+          }`,
+        token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
+      };
+
+      this.gcClient.query(query, response => {
+        successFunc(response);
+      }, error => {
+        errorFunc(error);
+      });
+    }, errorFunc);
+  }
+
+  _getMailingListId(email, successFunc, errorFunc) {
+    let query = {
+      data: `
+        query {
+          MailingList(email: \\"` + email + `\\") {
+            id
+            }
+         }`,
+      token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
+    };
+
+    this.gcClient.query(query, response => {
+      successFunc(response);
+    }, error => {
+      errorFunc(error);
+    });
+  }
   _createMailingListEntry(email, user, successFunc, errorFunc) {
     let query = {
       data: `

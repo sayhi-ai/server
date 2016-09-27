@@ -40,7 +40,7 @@ app.post('/change-password', (req, res) => {
 });
 
 // Add email to mailing list
-app.post('/add-mailing-list', (req, res) => {
+app.post('/subscribe', (req, res) => {
   let data = req.body;
   mailingListHandler.addToMailingList(data.email,
     response => res.send(response),
@@ -48,8 +48,11 @@ app.post('/add-mailing-list', (req, res) => {
 });
 
 // Remove email from mailing list
-app.post('/remove-mailing-list', (req, res) => {
-
+app.post('/unsubscribe', (req, res) => {
+  let data = req.body;
+  mailingListHandler.removeFromMailingList(data.email,
+    response => res.send(response),
+    error => res.send("Error adding to mailing list: " + error));
 });
 
 // Start express server
