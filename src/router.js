@@ -2,6 +2,7 @@ require('es6-promise').polyfill();
 import express from "express";
 import bodyParser from "body-parser";
 import GCClient from "./graphcoolClient";
+import MailingListHandler from "./account/mailingListHandler";
 import UserHandler from "./account/userHandler";
 
 // Set up express server
@@ -13,6 +14,7 @@ app.use(bodyParser.urlencoded({
 
 // Set up handlers
 const gcClient = new GCClient();
+const mailingListHandler = new MailingListHandler(gcClient);
 const userHandler = new UserHandler(gcClient);
 
 // Login
@@ -29,7 +31,7 @@ app.post('/create-account', (req, res) => {
   userHandler.addUser(data.firstName, data.lastName, data.email,
     data.password,
     response => res.send(response),
-    error => res.send("Error during login"));
+    error => res.send("Error creating an account: " + error));
 });
 
 // Change password
@@ -40,20 +42,9 @@ app.post('/change-password', (req, res) => {
 // Add email to mailing list
 app.post('/add-mailing-list', (req, res) => {
   let data = req.body;
-  let query = {
-    data: "mutation {createUser(" +
-    "firstName: \\\"" + data.firstName +
-    "\\\", lastName: \\\"" + data.lastName +
-    "\\\", email: \\\"" + data.email +
-    "\\\", password: \\\"" + data.password + "\\\")" +
-    "{id}}"
-  };
-
-  gcClient.query(query, response => {
-    res.send(response);
-  }, error => {
-    res.send("Error during login");
-  });
+  mailingListHandler.addToMailingList(data.email,
+    response => res.send(response),
+    error => res.send("Error adding to mailing list: " + error));
 });
 
 // Remove email from mailing list

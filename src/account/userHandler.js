@@ -51,18 +51,4 @@ export default class {
       errorFunc(error);
     });
   }
-
-  addToMailingList(email, successFunc, errorFunc) {
-    let query = `query {
-      User(email: \\"` + email + `\\") {
-        id
-      }
-    }`;
-
-    this.gcClient.query(query, response => {
-      successFunc(response);
-    }, error => {
-      errorFunc(error);
-    });
-  }
 }
