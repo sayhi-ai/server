@@ -1,9 +1,10 @@
 require('es6-promise').polyfill();
 import express from "express";
 import bodyParser from "body-parser";
-import GCClient from "./graphcoolClient";
+import ServiceHandler from "./services/serviceHandler";
 import MailingListHandler from "./account/mailingListHandler";
 import UserHandler from "./account/userHandler";
+import VerificationHandler from "./account/verificationHandler";
 
 // Set up express server
 const app = express();
@@ -13,9 +14,15 @@ app.use(bodyParser.urlencoded({
 }));
 
 // Set up handlers
-const gcClient = new GCClient();
-const mailingListHandler = new MailingListHandler(gcClient);
-const userHandler = new UserHandler(gcClient);
+const serviceHandler = new ServiceHandler();
+const mailingListHandler = new MailingListHandler(serviceHandler);
+const userHandler = new UserHandler(serviceHandler);
+const verificationHandler = new VerificationHandler(serviceHandler);
+
+// Test
+app.get('/test', (req, res) => {
+
+});
 
 // Login
 app.post('/login', (req, res) => {

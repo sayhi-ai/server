@@ -1,8 +1,8 @@
 import ENV_VARS from "../ENV_VARS";
 
 export default class {
-  constructor(gcClient) {
-    this.gcClient = gcClient;
+  constructor(serviceHandler) {
+    this.gcClient = serviceHandler.getGCClient();
   }
 
   addToMailingList(email, successFunc, errorFunc) {

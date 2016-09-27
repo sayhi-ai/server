@@ -1,5 +1,5 @@
 import fetch from "isomorphic-fetch";
-import ENV_VARS from "./ENV_VARS";
+import ENV_VARS from "../ENV_VARS";
 
 export default class {
   login(query, success, error) {
