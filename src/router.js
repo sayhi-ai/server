@@ -18,7 +18,7 @@ const functionHandler = new FunctionHandler(serviceHandler);
 // Test
 app.get('/test', (req, res) => {
   functionHandler.getActivationHandler().sendActivationRequest(
-    "julianbrendl@gmail.com", "citmz4vi7044a0150v1q8mnbq", "Darth",
+    "renebrandel@outlook.com", "citn3nxyq01el0116gan662mw", "Rene",
     response => res.send(response),
     error => res.send(error));
 });
@@ -26,14 +26,14 @@ app.get('/test', (req, res) => {
 // Activate account
 app.get('/activate', (req, res) => {
   functionHandler.getActivationHandler().activateAccount(req.query.code,
-    response => res.send(response),
+    response => res.redirect('https://google.com'),
     error => res.send(error));
 });
 
 // Login
 app.post('/login', (req, res) => {
   let data = req.body;
-  functionHandler.getUserHandler.login(data.email, data.password,
+  functionHandler.getUserHandler().login(data.email, data.password,
     response => res.send(response),
     error => res.send("Error during login"));
 });
@@ -41,7 +41,7 @@ app.post('/login', (req, res) => {
 // Create an account
 app.post('/create-account', (req, res) => {
   let data = req.body;
-  functionHandler.getUserHandler.addUser(data.firstName, data.lastName,
+  functionHandler.getUserHandler().addUser(data.firstName, data.lastName,
     data.email, data.password,
     response => res.send(response),
     error => res.send("Error creating an account: " + error));

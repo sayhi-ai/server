@@ -3,7 +3,7 @@ import ENV_VARS from "../../ENV_VARS";
 export default class {
   constructor(functionHandler, serviceHandler) {
     this.gcClient = serviceHandler.getGCClient();
-    this.activationHandler = functionHandler.getActivationHandler();
+    this.functionHandler = functionHandler;
   }
 
   login(email, password, successFunc, errorFunc) {
@@ -47,7 +47,8 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
-      this.activationHandler.sendActivationRequest(email,
+      console.log(response.data);
+      this.functionHandler.getActivationHandler().sendActivationRequest(email,
         response.data.createUser.id, firstName, successFunc, errorFunc);
     }, error => {
       errorFunc(error);
