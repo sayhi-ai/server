@@ -18,14 +18,16 @@ const functionHandler = new FunctionHandler(serviceHandler);
 // Test
 app.get('/test', (req, res) => {
   functionHandler.getActivationHandler().sendActivationRequest(
-    "julianbrendl@gmail.com", "Julian",
+    "julianbrendl@gmail.com", "citmz4vi7044a0150v1q8mnbq", "Darth",
     response => res.send(response),
     error => res.send(error));
 });
 
 // Activate account
 app.get('/activate', (req, res) => {
-  console.log(req.query);
+  functionHandler.getActivationHandler().activateAccount(req.query.code,
+    response => res.send(response),
+    error => res.send(error));
 });
 
 // Login

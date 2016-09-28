@@ -47,8 +47,8 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
-      this.activationHandler.sendActivationRequest(email, firstName,
-        successFunc, errorFunc);
+      this.activationHandler.sendActivationRequest(email,
+        response.data.createUser.id, firstName, successFunc, errorFunc);
     }, error => {
       errorFunc(error);
     });

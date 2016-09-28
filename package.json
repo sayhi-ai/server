@@ -65,13 +65,11 @@
   },
   "dependencies": {
     "body-parser": "^1.15.2",
-    "crypto-js": "^3.1.6",
     "es6-promise": "^3.3.1",
     "express": "^4.14.0",
     "fs": "0.0.1-security",
     "isomorphic-fetch": "^2.2.1",
-    "nodemailer": "^2.6.4",
-    "sha3": "^1.2.0"
+    "nodemailer": "^2.6.4"
   },
   "devDependencies": {
     "babel-core": "^6.9.1",
