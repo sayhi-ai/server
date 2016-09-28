@@ -88,6 +88,6 @@ export default class {
     }
 
     let queryFinal = '{' + dataFull + ',' + varsFull + ',' + opNameFull + '}';
-    return queryFinal.replace(/(\r\n|\n|\r| )/gm, '');
+    return queryFinal.replace(/(\r\n|\n|\r)/gm, '');
   }
 }

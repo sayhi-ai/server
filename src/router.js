@@ -27,7 +27,7 @@ app.get('/test', (req, res) => {
 app.get('/activate', (req, res) => {
   functionHandler.getActivationHandler().activateAccount(req.query.code,
     response => res.redirect('https://google.com'),
-    error => res.send(error));
+    error => res.send("Error activating account"));
 });
 
 // Login
@@ -39,16 +39,16 @@ app.post('/login', (req, res) => {
 });
 
 // Create an account
-app.post('/create-account', (req, res) => {
+app.post('/createaccount', (req, res) => {
   let data = req.body;
   functionHandler.getUserHandler().addUser(data.firstName, data.lastName,
     data.email, data.password,
     response => res.send(response),
-    error => res.send("Error creating an account: " + error));
+    error => res.send("Error creating an account"));
 });
 
 // Change password
-app.post('/change-password', (req, res) => {
+app.post('/changepassword', (req, res) => {
 
 });
 
@@ -57,7 +57,7 @@ app.post('/subscribe', (req, res) => {
   let data = req.body;
   functionHandler.getMailingListHandler().addToMailingList(data.email,
     response => res.send(response),
-    error => res.send("Error adding to mailing list: " + error));
+    error => res.send("Error subscribing to mailing list"));
 });
 
 // Remove email from mailing list
@@ -65,7 +65,33 @@ app.post('/unsubscribe', (req, res) => {
   let data = req.body;
   functionHandler.getMailingListHandler().removeFromMailingList(data.email,
     response => res.send(response),
-    error => res.send("Error adding to mailing list: " + error));
+    error => res.send("Error unsubscribing from mailing list"));
+});
+
+// Get response
+app.post('/getresponse', (req, res) => {
+  let data = req.body;
+  functionHandler.getResponseHandler().getResponse(data.token, data.phrase,
+    data.persona,
+    response => res.send(response),
+    error => res.send("Error getting response"));
+});
+
+// Add response
+app.post('/addresponse', (req, res) => {
+  let data = req.body;
+  functionHandler.getResponseHandler().addResponse(data.token, data.phrase,
+    data.persona, data.response,
+    response => res.send(response),
+    error => res.send("Error adding a response"));
+});
+
+// Remove response
+app.post('/removeresponse', (req, res) => {
+  let data = req.body;
+  functionHandler.getResponseHandler().removeResponse(data.token, data.response,
+    response => res.send(response),
+    error => res.send("Error removing a response"));
 });
 
 // Start express server

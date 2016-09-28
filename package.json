@@ -69,6 +69,7 @@
     "express": "^4.14.0",
     "fs": "0.0.1-security",
     "isomorphic-fetch": "^2.2.1",
+    "jwt-decode": "^2.1.0",
     "nodemailer": "^2.6.4"
   },
   "devDependencies": {
