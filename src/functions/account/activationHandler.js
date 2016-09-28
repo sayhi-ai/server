@@ -22,7 +22,7 @@ export default class {
       data: `
         query {
           Activation(code: \\"` + code + `\\") {
-            id
+            id,
             userId
           }
         }`,
