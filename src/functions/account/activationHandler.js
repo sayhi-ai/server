@@ -2,9 +2,9 @@ import fs from 'fs';
 import ENV_VARS from "../../ENV_VARS";
 
 export default class {
-  constructor(functionHandler, serviceHandler) {
-    this.gcClient = serviceHandler.getGCClient();
-    this.mailClient = serviceHandler.getMailClient();
+  constructor(functionHandler, clientsHandler) {
+    this.gcClient = clientsHandler.getGCClient();
+    this.mailClient = clientsHandler.getMailClient();
   }
 
   sendActivationRequest(email, userId, firstName, successFunc, errorFunc) {

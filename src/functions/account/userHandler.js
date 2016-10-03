@@ -1,8 +1,8 @@
 import ENV_VARS from "../../ENV_VARS";
 
 export default class {
-  constructor(functionHandler, serviceHandler) {
-    this.gcClient = serviceHandler.getGCClient();
+  constructor(functionHandler, clientsHandler) {
+    this.gcClient = clientsHandler.getGCClient();
     this.functionHandler = functionHandler;
   }
 

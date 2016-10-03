@@ -1,7 +1,7 @@
 require('es6-promise').polyfill();
 import express from "express";
 import bodyParser from "body-parser";
-import ServiceHandler from "./services/serviceHandler";
+import ClientsHandler from "./clients/clientsHandler";
 import FunctionHandler from "./functions/functionHandler";
 
 // Set up express server
@@ -12,8 +12,8 @@ app.use(bodyParser.urlencoded({
 }));
 
 // Set up handlers
-const serviceHandler = new ServiceHandler();
-const functionHandler = new FunctionHandler(serviceHandler);
+const clientsHandler = new ClientsHandler();
+const functionHandler = new FunctionHandler(clientsHandler);
 
 // Test
 app.get('/test', (req, res) => {

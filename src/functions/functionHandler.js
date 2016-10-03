@@ -4,11 +4,11 @@ import ActivationHandler from "./account/activationHandler";
 import ResponseHandler from "./responses/responseHandler";
 
 export default class {
-  constructor(serviceHandler) {
-    this.mailingListHandler = new MailingListHandler(this, serviceHandler);
-    this.userHandler = new UserHandler(this, serviceHandler);
-    this.activationHandler = new ActivationHandler(this, serviceHandler);
-    this.responseHandler = new ResponseHandler(this, serviceHandler);
+  constructor(clientsHandler) {
+    this.mailingListHandler = new MailingListHandler(this, clientsHandler);
+    this.userHandler = new UserHandler(this, clientsHandler);
+    this.activationHandler = new ActivationHandler(this, clientsHandler);
+    this.responseHandler = new ResponseHandler(this, clientsHandler);
   }
 
   getMailingListHandler() {

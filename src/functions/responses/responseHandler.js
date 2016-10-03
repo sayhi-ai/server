@@ -1,8 +1,8 @@
 import jwtDecode from 'jwt-decode';
 
 export default class {
-  constructor(functionHandler, serviceHandler) {
-    this.gcClient = serviceHandler.getGCClient();
+  constructor(functionHandler, clientsHandler) {
+    this.gcClient = clientsHandler.getGCClient();
   }
 
   getResponse(token, phrase, persona, successFunc, errorFunc) {
