@@ -26,7 +26,8 @@ export default class {
     };
 
     this.gcClient.login(query, response => {
-      successFunc(response);
+      let token = response.data.signinUser.token;
+      successFunc(JSON.stringify({token: token}));
     }, error => {
       errorFunc(error);
     });
