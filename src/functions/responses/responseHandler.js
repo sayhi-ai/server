@@ -69,14 +69,14 @@ export default class {
   }
 
   addResponse(token, phrase, persona, response, successFunc, errorFunc) {
-    if (phrase === "" || phrase.length >
-      ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH) {
+    if (phrase === "" ||
+      phrase.length > ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH) {
       return errorFunc("Length of phrase must be between 0 and " +
         ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH);
     }
 
-    if (persona === "" || persona.length >
-      ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH) {
+    if (persona === "" ||
+      persona.length > ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH) {
       return errorFunc("Length of persona must be between 0 and " +
         ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH);
     }
@@ -87,6 +87,41 @@ export default class {
         ENV_VARS.CONSTANTS.MAX_RESPONSE_LENGTH);
     }
 
+    if (phrase.includes(ENV_VARS.CONSTANTS.RESPONSE_VARIABLE) ||
+      persona.includes(ENV_VARS.CONSTANTS.RESPONSE_VARIABLE)) {
+      return errorFunc(ENV_VARS.CONSTANTS.RESPONSE_VARIABLE + " not allowed " +
+        "in phrase or persona");
+    }
+
+    let query = {
+      data: `
+        query {
+          allResponses(
+            filter: {
+              phrase: \\"` + phrase + `\\",
+              persona: \\"` + persona + `\\",
+              response: \\"` + response + `\\"
+            }
+          ) {
+            id
+          }
+        }`,
+      token: token
+    };
+    this.gcClient.query(query, responseQl => {
+      if (responseQl.data.allResponses.length === 0) {
+        this._createNewResponse(token, phrase, persona, response,
+          successFunc, errorFunc);
+      } else {
+        this._linkResponseToUser(token, responseQl.data.allResponses[0].id,
+          successFunc, errorFunc);
+      }
+    }, error => {
+      errorFunc(error);
+    });
+  }
+
+  _createNewResponse(token, phrase, persona, response, successFunc, errorFunc) {
     let query = {
       data: `
         mutation {
@@ -101,8 +136,8 @@ export default class {
       token: token
     };
 
-    this.gcClient.query(query, response => {
-      this._linkResponseToUser(token, response.data.createResponse.id,
+    this.gcClient.query(query, responseQl => {
+      this._linkResponseToUser(token, responseQl.data.createResponse.id,
         successFunc, errorFunc);
     }, error => {
       errorFunc(error);

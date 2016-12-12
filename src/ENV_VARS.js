@@ -10,7 +10,8 @@ const CONSTANTS = {
   INFO_MAIL_PASSWORD: "KkW{cQ^h,c82[(/]8)5u<4a,(&$?RUx:sBZ:Y_cM",
   SUPPORT_MAIL_PASSWORD: "Yf)A6)kr7!fTj([&]v:d[v`K6yZ,Lk.s@6tC=n'2",
   MAX_PHRASE_TOKEN_LENGTH: 50,
-  MAX_RESPONSE_LENGTH: 300
+  MAX_RESPONSE_LENGTH: 300,
+  RESPONSE_VARIABLE: "$VAR"
 };
 
 if (process.env.NODE_ENV === "production") {
