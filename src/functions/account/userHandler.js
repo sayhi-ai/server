@@ -11,8 +11,10 @@ export default class {
       data: `
         mutation {
           signinUser(
-            email: \\"` + email + `\\",
-            password: \\"` + password + `\\"
+            email: { 
+              email: \\"` + email + `\\",
+              password: \\"` + password + `\\"
+            }
           ) {
             user {
               firstName, 
@@ -30,15 +32,18 @@ export default class {
     });
   }
 
-  addUser(firstName, lastName, email, password, successFunc, errorFunc) {
+  linkAccountAuth0(firstName, lastName, token, successFunc, errorFunc) {
     let query = {
       data: `
         mutation {
           createUser(
+            authProvider: { 
+              auth0: { 
+                idToken: \\"` + token + `\\" 
+              }
+            },
             firstName: \\"` + firstName + `\\",
             lastName: \\"` + lastName + `\\",
-            email: \\"` + email + `\\",
-            password: \\"` + password + `\\"
           ) {
             id
           }
@@ -47,8 +52,35 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
-      // this.functionHandler.getActivationHandler().sendActivationRequest(email,
-      //   response.data.createUser.id, firstName, successFunc, errorFunc);
+      successFunc(response);
+    }, error => {
+      errorFunc(error);
+    });
+  }
+
+  addUser(firstName, lastName, email, password, successFunc, errorFunc) {
+    let query = {
+      data: `
+      mutation {
+        createUser(
+          authProvider: {
+            email: {
+              email: \\"` + email + `\\",
+              password: \\"` + password + `\\",
+            }
+          },
+          firstName: \\"` + firstName + `\\",
+          lastName: \\"` + lastName + `\\",
+        ) {
+          id
+        }
+      }`,
+      token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
+    };
+
+    this.gcClient.query(query, response => {
+      this.functionHandler.getActivationHandler().sendActivationRequest(email,
+        response.data.createUser.id, firstName, successFunc, errorFunc);
       successFunc(response);
     }, error => {
       errorFunc(error);

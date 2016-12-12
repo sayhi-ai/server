@@ -39,6 +39,15 @@ app.post('/login', (req, res) => {
 });
 
 // Create an account
+app.post('/linkaccountauth0', (req, res) => {
+  let data = req.body;
+  functionHandler.getUserHandler().linkAccountAuth0(data.firstName,
+    data.lastName, data.token,
+    response => res.send(response),
+    error => res.send("Error creating an account"));
+});
+
+// Create an account
 app.post('/createaccount', (req, res) => {
   let data = req.body;
   functionHandler.getUserHandler().addUser(data.firstName, data.lastName,
@@ -72,7 +81,7 @@ app.post('/unsubscribe', (req, res) => {
 app.post('/getresponse', (req, res) => {
   let data = req.body;
   functionHandler.getResponseHandler().getResponse(data.token, data.phrase,
-    data.persona,
+    data.persona, data.personal,
     response => res.send(response),
     error => res.send("Error getting response"));
 });
