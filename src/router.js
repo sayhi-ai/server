@@ -106,7 +106,7 @@ app.post('/getresponse', (req, res) => {
     error => errorHandler("Error getting response", error, res));
 });
 
-// Get response
+// Get all phrases a user has
 app.post('/getphrases', (req, res) => {
   let data = req.body;
   functionHandler.getResponseHandler().getPhrases(data.token,
