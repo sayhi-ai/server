@@ -30,7 +30,7 @@ export default class {
     });
   }
 
-  getResponses(token, phrase, successFunc, errorFunc) {
+  _getResponses(token, phrase, successFunc, errorFunc) {
     let decodedToken = jwtDecode(token);
     let query = {
       data: `
@@ -50,17 +50,25 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
-      let responses = [];
-      response.data.User.responses.forEach(response =>
-        responses.push(response.response));
-      successFunc(JSON.stringify({responses: responses}));
+      successFunc(response);
     }, error => {
       errorFunc(error);
     });
   }
 
+  getResponses(token, phrase, successFunc, errorFunc) {
+    this._getResponses(token, phrase,
+      response => {
+        let responses = [];
+        response.data.User.responses.forEach(response =>
+          responses.push(response.response));
+        successFunc(JSON.stringify({responses: responses}));
+      },
+      errorFunc);
+  }
+
   getResponse(token, phrase, successFunc, errorFunc) {
-    this.getResponses(token, phrase,
+    this._getResponses(token, phrase,
       response => this._chooseResponse(response, successFunc),
       errorFunc);
   }
