@@ -7,7 +7,29 @@ export default class {
   }
 
   getPhrases(token, successFunc, errorFunc) {
+    let decodedToken = jwtDecode(token);
+    let query = {
+      data: `
+      query {
+        User(id: \\"` + decodedToken.userId + `\\") {
+          responses(
+            filter: {
+              phrase: \\"` + phrase + `\\",
+            }
+          ) {
+            id,
+            response
+          }
+        }
+      }`,
+      token: token
+    };
 
+    this.gcClient.query(query, response => {
+      this._chooseResponse(response, successFunc);
+    }, error => {
+      errorFunc(error);
+    });
   }
 
   getResponse(token, phrase, successFunc, errorFunc) {
@@ -120,7 +142,7 @@ export default class {
     let query = {
       data: `
         mutation {
-          addToURRelation(
+          addToUserResponsesRelation(
             userUserId: \\"` + decodedToken.userId + `\\",
             responsesResponseId: \\"` + responseId + `\\"
           ) {
@@ -186,7 +208,7 @@ export default class {
       query = {
         data: `
           mutation {
-            removeFromURRelation(
+            removeFromUserResponsesRelation(
               userUserId: \\"` + decodedToken.userId + `\\",
               responsesResponseId: \\"` + response.id + `\\"
             ) {

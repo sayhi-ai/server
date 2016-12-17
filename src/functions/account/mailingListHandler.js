@@ -89,7 +89,7 @@ export default class {
     let query = {
       data: `
         mutation {
-          setUMRelation(
+          setUserMailRelation(
             usersUserId: \\"` + userID + `\\", 
             mailinglistMailingListId: \\"` + mailingListID + `\\") {
             usersUser {
