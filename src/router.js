@@ -1,6 +1,7 @@
 require('es6-promise').polyfill();
 import express from "express";
 import bodyParser from "body-parser";
+import * as authorization from 'auth-header';
 import ClientsHandler from "./clients/clientsHandler";
 import FunctionHandler from "./functions/functionHandler";
 import ENV_VARS from "./ENV_VARS";
@@ -34,13 +35,11 @@ const errorHandler = (error, detail, res) => {
   }));
 };
 
-// Test
-app.get('/test', (req, res) => {
-  functionHandler.getActivationHandler().sendActivationRequest(
-    "renebrandel@outlook.com", "citn3nxyq01el0116gan662mw", "Rene",
-    response => res.send(response),
-    error => errorHandler(error, error, res));
-});
+// Other functions
+const extractAuthToken = req => {
+  let auth = authorization.parse(req.get('authorization'));
+  return auth.token;
+};
 
 // Activate account
 app.get('/activate', (req, res) => {
@@ -59,11 +58,12 @@ app.post('/login', (req, res) => {
     error => errorHandler("Error during login", error, res));
 });
 
-// Create an account
+// Link account with auth0
 app.post('/linkaccountauth0', (req, res) => {
+  let token = extractAuthToken(req);
   let data = req.body;
   functionHandler.getUserHandler().linkAccountAuth0(data.firstName,
-    data.lastName, data.token,
+    data.lastName, token,
     response => res.send(response),
     error => errorHandler("Error creating an account", error, res));
 });
@@ -100,24 +100,35 @@ app.post('/unsubscribe', (req, res) => {
 
 // Get response
 app.post('/getresponse', (req, res) => {
+  let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getResponseHandler().getResponse(data.token, data.phrase,
+  functionHandler.getResponseHandler().getResponse(token, data.phrase,
     response => res.send(response),
     error => errorHandler("Error getting response", error, res));
+});
+
+// Get all responses belonging to a phrase
+app.post('/getresponses', (req, res) => {
+  let token = extractAuthToken(req);
+  let data = req.body;
+  functionHandler.getResponseHandler().getResponses(token, data.phrase,
+    response => res.send(response),
+    error => errorHandler("Error getting phrases", error, res));
 });
 
 // Get all phrases a user has
 app.post('/getphrases', (req, res) => {
-  let data = req.body;
-  functionHandler.getResponseHandler().getPhrases(data.token,
+  let token = extractAuthToken(req);
+  functionHandler.getResponseHandler().getPhrases(token,
     response => res.send(response),
-    error => errorHandler("Error getting response", error, res));
+    error => errorHandler("Error getting phrases", error, res));
 });
 
 // Add response
 app.post('/addresponse', (req, res) => {
+  let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getResponseHandler().addResponse(data.token, data.phrase,
+  functionHandler.getResponseHandler().addResponse(token, data.phrase,
     data.response,
     response => res.send(response),
     error => errorHandler("Error adding a response", error, res));
@@ -125,8 +136,9 @@ app.post('/addresponse', (req, res) => {
 
 // Remove response
 app.post('/removeresponse', (req, res) => {
+  let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getResponseHandler().removeResponse(data.token, data.response,
+  functionHandler.getResponseHandler().removeResponse(token, data.response,
     response => res.send(response),
     error => errorHandler("Error removing a response", error, res));
 });

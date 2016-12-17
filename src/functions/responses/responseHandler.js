@@ -1,5 +1,5 @@
 import jwtDecode from "jwt-decode";
-import ENV_VARS from "../../ENV_VARS"
+import ENV_VARS from "../../ENV_VARS";
 
 export default class {
   constructor(functionHandler, clientsHandler) {
@@ -21,13 +21,16 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
-      successFunc(response)
+      let phrases = [];
+      response.data.User.responses.forEach(phrase =>
+        phrases.push(phrase.phrase));
+      successFunc(JSON.stringify({phrases: phrases}));
     }, error => {
       errorFunc(error);
     });
   }
 
-  getResponse(token, phrase, successFunc, errorFunc) {
+  getResponses(token, phrase, successFunc, errorFunc) {
     let decodedToken = jwtDecode(token);
     let query = {
       data: `
@@ -47,10 +50,19 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
-      this._chooseResponse(response, successFunc);
+      let responses = [];
+      response.data.User.responses.forEach(response =>
+        responses.push(response.response));
+      successFunc(JSON.stringify({responses: responses}));
     }, error => {
       errorFunc(error);
     });
+  }
+
+  getResponse(token, phrase, successFunc, errorFunc) {
+    this.getResponses(token, phrase,
+      response => this._chooseResponse(response, successFunc),
+      errorFunc);
   }
 
   _chooseResponse(gcResponse, callbackFunc) {
