@@ -60,22 +60,27 @@ export default class {
   }
 
   addUser(firstName, lastName, email, password, successFunc, errorFunc) {
+    let time = new Date().getTime();
+    let date = new Date(time);
+    let dateISO = date.toISOString();
+
     let query = {
       data: `
-      mutation {
-        createUser(
-          authProvider: {
-            email: {
-              email: \\"` + email + `\\",
-              password: \\"` + password + `\\",
-            }
-          },
-          firstName: \\"` + firstName + `\\",
-          lastName: \\"` + lastName + `\\",
-        ) {
-          id
-        }
-      }`,
+        mutation {
+          createUser(
+            authProvider: {
+              email: {
+                email: \\"` + email + `\\",
+                password: \\"` + password + `\\",
+              }
+            },
+            firstName: \\"` + firstName + `\\",
+            lastName: \\"` + lastName + `\\",
+            joined: \\"` + dateISO + `\\",
+          ) {
+            id
+          }
+        }`,
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 

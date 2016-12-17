@@ -23,14 +23,16 @@ export default class {
         query {
           Activation(code: \\"` + code + `\\") {
             id,
-            userId
+            user {
+              id
+            }
           }
         }`,
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
     this.gcClient.query(query, response => {
-      this._updateAccountStatus(response.data.Activation.userId,
+      this._updateAccountStatus(response.data.Activation.user.id,
         () => this._deleteActivationObject(response.data.Activation.id,
           successFunc, errorFunc),
         errorFunc);
@@ -43,8 +45,7 @@ export default class {
     let query = {
       data: `
           mutation {
-            updateUser(id: \\"` + id + `\\",
-            activated: true) {
+            updateUser(id: \\"` + id + `\\", roles: AUTH) {
               id
             }
           }`,
@@ -77,18 +78,45 @@ export default class {
   }
 
   _saveActivationCode(userId, code, successFunc, errorFunc) {
-    var dateObj = new Date();
-    var dateMilli = dateObj.getTime();
+    let time = new Date().getTime();
+    let date = new Date(time);
+    let dateISO = date.toISOString();
 
     let query = {
       data: `
         mutation {
           createActivation(
-            userId: \\"` + userId + `\\"
             code: \\"` + code + `\\"
-            date: \\"` + dateMilli + `\\"
+            date: \\"` + dateISO + `\\"
           ) {
             id
+          }
+        }`,
+      token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
+    };
+
+    this.gcClient.query(query, response => {
+      this._linkActivationToUser(userId, response.data.createActivation.id,
+        successFunc, errorFunc);
+    }, error => {
+      errorFunc(error);
+    });
+  }
+
+  _linkActivationToUser(userId, activationId, successFunc, errorFunc) {
+    let query = {
+      data: `
+        mutation {
+          setUserActivationRelation(
+            userUserId: \\"` + userId + `\\"
+            activationActivationId: \\"` + activationId + `\\"
+          ) {
+            userUser{
+              id
+            }
+            activationActivation {
+              id
+            }
           }
         }`,
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
