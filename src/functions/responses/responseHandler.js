@@ -12,13 +12,8 @@ export default class {
       data: `
       query {
         User(id: \\"` + decodedToken.userId + `\\") {
-          responses(
-            filter: {
-              phrase: \\"` + phrase + `\\",
-            }
-          ) {
-            id,
-            response
+          responses {
+            phrase
           }
         }
       }`,
@@ -26,7 +21,7 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
-      this._chooseResponse(response, successFunc);
+      successFunc(response)
     }, error => {
       errorFunc(error);
     });

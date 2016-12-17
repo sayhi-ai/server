@@ -109,7 +109,7 @@ app.post('/getresponse', (req, res) => {
 // Get response
 app.post('/getphrases', (req, res) => {
   let data = req.body;
-  functionHandler.getResponseHandler().getResponse(data.token,
+  functionHandler.getResponseHandler().getPhrases(data.token,
     response => res.send(response),
     error => errorHandler("Error getting response", error, res));
 });
