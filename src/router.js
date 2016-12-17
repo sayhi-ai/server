@@ -3,11 +3,25 @@ import express from "express";
 import bodyParser from "body-parser";
 import ClientsHandler from "./clients/clientsHandler";
 import FunctionHandler from "./functions/functionHandler";
+import ENV_VARS from "./ENV_VARS";
 
 // Set up express server
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(function(req, res, next) {
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Origin', ENV_VARS.CLIENT_URL);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS,' +
+    'PUT, PATCH, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With,' +
+    ' Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 // Set up handlers
 const clientsHandler = new ClientsHandler();
@@ -39,7 +53,9 @@ app.get('/activate', (req, res) => {
 app.post('/login', (req, res) => {
   let data = req.body;
   functionHandler.getUserHandler().login(data.email, data.password,
-    response => res.send(response),
+    response => {
+      return res.send(response);
+    },
     error => errorHandler("Error during login", error, res));
 });
 
@@ -86,7 +102,14 @@ app.post('/unsubscribe', (req, res) => {
 app.post('/getresponse', (req, res) => {
   let data = req.body;
   functionHandler.getResponseHandler().getResponse(data.token, data.phrase,
-    data.persona, data.personal,
+    response => res.send(response),
+    error => errorHandler("Error getting response", error, res));
+});
+
+// Get response
+app.post('/getphrases', (req, res) => {
+  let data = req.body;
+  functionHandler.getResponseHandler().getResponse(data.token,
     response => res.send(response),
     error => errorHandler("Error getting response", error, res));
 });
@@ -95,7 +118,7 @@ app.post('/getresponse', (req, res) => {
 app.post('/addresponse', (req, res) => {
   let data = req.body;
   functionHandler.getResponseHandler().addResponse(data.token, data.phrase,
-    data.persona, data.response,
+    data.response,
     response => res.send(response),
     error => errorHandler("Error adding a response", error, res));
 });

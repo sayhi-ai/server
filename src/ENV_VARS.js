@@ -18,12 +18,14 @@ if (process.env.NODE_ENV === "production") {
   ENV_VARS = {
     ROOT: "build",
     BASE_URL: "https://api.sayhi.ai",
+    CLIENT_URL: "https://dashboard.sayhi.ai",
     CONSTANTS: CONSTANTS
   };
 } else {
   ENV_VARS = {
     ROOT: "dev",
     BASE_URL: "http://localhost:8080",
+    CLIENT_URL: "http://localhost:4000",
     CONSTANTS: CONSTANTS
   };
 }

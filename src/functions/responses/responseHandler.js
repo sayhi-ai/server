@@ -6,59 +6,38 @@ export default class {
     this.gcClient = clientsHandler.getGCClient();
   }
 
-  getResponse(token, phrase, persona, personal, successFunc, errorFunc) {
-    let query;
-    if (personal) {
-      let decodedToken = jwtDecode(token);
-      query = {
-        data: `
-        query {
-          User(id: \\"` + decodedToken.userId + `\\") {
-            responses(
-              filter: {
-                phrase: \\"` + phrase + `\\",
-                persona: \\"` + persona + `\\",
-              }
-            ) {
-              id,
-              response
-            }
-          }
-        }`,
-        token: token
-      };
-    } else {
-      query = {
-        data: `
-        query {
-          allResponses(
+  getPhrases(token, successFunc, errorFunc) {
+
+  }
+
+  getResponse(token, phrase, successFunc, errorFunc) {
+    let decodedToken = jwtDecode(token);
+    let query = {
+      data: `
+      query {
+        User(id: \\"` + decodedToken.userId + `\\") {
+          responses(
             filter: {
-              approved: true,
               phrase: \\"` + phrase + `\\",
-              persona: \\"` + persona + `\\",
-            }) {
-            id
+            }
+          ) {
+            id,
             response
           }
-        }`,
-        token: token
-      };
-    }
+        }
+      }`,
+      token: token
+    };
 
     this.gcClient.query(query, response => {
-      this._chooseResponse(response, personal, successFunc);
+      this._chooseResponse(response, successFunc);
     }, error => {
       errorFunc(error);
     });
   }
 
-  _chooseResponse(gcResponse, personal, callbackFunc) {
-    let responses;
-    if (personal) {
-      responses = gcResponse.data.User.responses;
-    } else {
-      responses = gcResponse.data.allResponses;
-    }
+  _chooseResponse(gcResponse, callbackFunc) {
+    let responses = gcResponse.data.User.responses;
 
     if (responses.length > 0) {
       let index = Math.floor(Math.random() * responses.length);
@@ -68,16 +47,10 @@ export default class {
     }
   }
 
-  addResponse(token, phrase, persona, response, successFunc, errorFunc) {
+  addResponse(token, phrase, response, successFunc, errorFunc) {
     if (phrase === "" ||
       phrase.length > ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH) {
       return errorFunc("Length of phrase must be between 0 and " +
-        ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH);
-    }
-
-    if (persona === "" ||
-      persona.length > ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH) {
-      return errorFunc("Length of persona must be between 0 and " +
         ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH);
     }
 
@@ -87,10 +60,9 @@ export default class {
         ENV_VARS.CONSTANTS.MAX_RESPONSE_LENGTH);
     }
 
-    if (phrase.includes(ENV_VARS.CONSTANTS.RESPONSE_VARIABLE) ||
-      persona.includes(ENV_VARS.CONSTANTS.RESPONSE_VARIABLE)) {
+    if (phrase.includes(ENV_VARS.CONSTANTS.RESPONSE_VARIABLE)) {
       return errorFunc(ENV_VARS.CONSTANTS.RESPONSE_VARIABLE + " not allowed " +
-        "in phrase or persona");
+        "in phrase");
     }
 
     let query = {
@@ -99,7 +71,6 @@ export default class {
           allResponses(
             filter: {
               phrase: \\"` + phrase + `\\",
-              persona: \\"` + persona + `\\",
               response: \\"` + response + `\\"
             }
           ) {
@@ -110,7 +81,7 @@ export default class {
     };
     this.gcClient.query(query, responseQl => {
       if (responseQl.data.allResponses.length === 0) {
-        this._createNewResponse(token, phrase, persona, response,
+        this._createNewResponse(token, phrase, response,
           successFunc, errorFunc);
       } else {
         this._linkResponseToUser(token, responseQl.data.allResponses[0].id,
@@ -121,13 +92,12 @@ export default class {
     });
   }
 
-  _createNewResponse(token, phrase, persona, response, successFunc, errorFunc) {
+  _createNewResponse(token, phrase, response, successFunc, errorFunc) {
     let query = {
       data: `
         mutation {
           createResponse(
             phrase: \\"` + phrase + `\\",
-            persona: \\"` + persona + `\\",
             response: \\"` + response + `\\"
           ) {
             id
