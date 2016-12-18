@@ -6,137 +6,87 @@ export default class {
     this.gcClient = clientsHandler.getGCClient();
   }
 
-  getPhrases(token, successFunc, errorFunc) {
-    let decodedToken = jwtDecode(token);
-    let query = {
-      data: `
-      query {
-        User(id: \\"` + decodedToken.userId + `\\") {
-          responses {
-            phrase
-          }
-        }
-      }`,
-      token: token
-    };
-
-    this.gcClient.query(query, response => {
-      let phrases = [];
-      response.data.User.responses.forEach(phrase =>
-        phrases.push(phrase.phrase));
-      successFunc(JSON.stringify({phrases: phrases}));
-    }, error => {
-      errorFunc(error);
-    });
-  }
-
-  _getResponses(token, phrase, successFunc, errorFunc) {
-    let decodedToken = jwtDecode(token);
-    let query = {
-      data: `
-      query {
-        User(id: \\"` + decodedToken.userId + `\\") {
-          responses(
-            filter: {
-              phrase: \\"` + phrase + `\\",
-            }
-          ) {
-            id,
-            response
-          }
-        }
-      }`,
-      token: token
-    };
-
-    this.gcClient.query(query, response => {
-      successFunc(response);
-    }, error => {
-      errorFunc(error);
-    });
-  }
-
-  getResponses(token, phrase, successFunc, errorFunc) {
-    this._getResponses(token, phrase,
-      response => {
-        let responses = [];
-        response.data.User.responses.forEach(response =>
-          responses.push(response.response));
-        successFunc(JSON.stringify({responses: responses}));
-      },
+  getResponses(token, botId, phraseId, successFunc, errorFunc) {
+    this._getResponses(token, botId, phraseId,
+      response => successFunc(JSON.stringify({responses: response})),
       errorFunc);
   }
 
-  getResponse(token, phrase, successFunc, errorFunc) {
-    this._getResponses(token, phrase,
+  getResponse(token, botId, phraseId, successFunc, errorFunc) {
+    this._getResponses(token, botId, phraseId,
       response => this._chooseResponse(response, successFunc),
       errorFunc);
   }
 
-  _chooseResponse(gcResponse, callbackFunc) {
-    let responses = gcResponse.data.User.responses;
+  _getResponses(token, botId, phraseId, successFunc, errorFunc) {
+    let query = {
+      data: `
+        query {
+          Bot(id: \\"` + botId + `\\") {
+            phrases(filter: {id: \\"` + phraseId + `\\"}) {
+              responses {
+                response
+              }
+            }
+          }
+        }`,
+      token: token
+    };
 
+    this.gcClient.query(query, response => {
+      let responses = [];
+      response.data.Bot.phrases[0].responses.forEach(response =>
+        responses.push(response.response));
+      successFunc(responses);
+    }, error => errorFunc(error));
+  }
+
+  _chooseResponse(responses, successFunc) {
     if (responses.length > 0) {
       let index = Math.floor(Math.random() * responses.length);
-      callbackFunc(JSON.stringify({response: responses[index].response}));
+      successFunc(JSON.stringify({response: responses[index]}));
     } else {
-      callbackFunc(JSON.stringify({response: ""}));
+      successFunc(JSON.stringify({response: ""}));
     }
   }
 
-  addResponse(token, phrase, response, successFunc, errorFunc) {
-    if (phrase === "" ||
-      phrase.length > ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH) {
-      return errorFunc("Length of phrase must be between 0 and " +
-        ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH);
-    }
-
+  addResponse(token, phraseId, response, successFunc, errorFunc) {
     if (response === "" || response.length >
       ENV_VARS.CONSTANTS.MAX_RESPONSE_LENGTH) {
       return errorFunc("Length of response must be between 0 and " +
         ENV_VARS.CONSTANTS.MAX_RESPONSE_LENGTH);
     }
 
-    if (phrase.includes(ENV_VARS.CONSTANTS.RESPONSE_VARIABLE)) {
-      return errorFunc(ENV_VARS.CONSTANTS.RESPONSE_VARIABLE + " not allowed " +
-        "in phrase");
-    }
-
     let query = {
       data: `
         query {
-          allResponses(
-            filter: {
-              phrase: \\"` + phrase + `\\",
-              response: \\"` + response + `\\"
-            }
-          ) {
+          allResponses(filter: {response: \\"` + response + `\\"}) {
             id
           }
         }`,
       token: token
     };
     this.gcClient.query(query, responseQl => {
-      if (responseQl.data.allResponses.length === 0) {
-        this._createNewResponse(token, phrase, response,
+      let responses = responseQl.data.allResponses;
+      if (responses.length === 0) {
+        this._createNewResponse(token, phraseId, response,
+          successFunc, errorFunc);
+      } else if (responses.length === 1) {
+        this._linkResponseToPhrase(token, phraseId, responses[0].id,
           successFunc, errorFunc);
       } else {
-        this._linkResponseToUser(token, responseQl.data.allResponses[0].id,
-          successFunc, errorFunc);
+        errorFunc("Duplicate response found");
       }
     }, error => {
       errorFunc(error);
     });
   }
 
-  _createNewResponse(token, phrase, response, successFunc, errorFunc) {
+  _createNewResponse(token, phraseId, response, successFunc, errorFunc) {
     let query = {
       data: `
         mutation {
-          createResponse(
-            phrase: \\"` + phrase + `\\",
-            response: \\"` + response + `\\"
-          ) {
+          createResponse(response: \\"` + response + `\\") {
             id
           }
         }`,
@@ -144,24 +94,22 @@ export default class {
     };
 
     this.gcClient.query(query, responseQl => {
-      this._linkResponseToUser(token, responseQl.data.createResponse.id,
-        successFunc, errorFunc);
+      this._linkResponseToPhrase(token, phraseId,
+        responseQl.data.createResponse.id, successFunc, errorFunc);
     }, error => {
       errorFunc(error);
     });
   }
 
-  _linkResponseToUser(token, responseId, successFunc, errorFunc) {
-    let decodedToken = jwtDecode(token);
-
+  _linkResponseToPhrase(token, phraseId, responseId, successFunc, errorFunc) {
     let query = {
       data: `
         mutation {
-          addToUserResponsesRelation(
-            userUserId: \\"` + decodedToken.userId + `\\",
+          addToPhraseResponseRelation(
+            phrasesPhraseId: \\"` + phraseId + `\\",
             responsesResponseId: \\"` + responseId + `\\"
           ) {
-            userUser {
+            phrasesPhrase {
               id
             }
             responsesResponse {
@@ -173,27 +121,28 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
-      successFunc(response);
+      if (response.data.addToPhraseResponseRelation === null) {
+        successFunc(JSON.stringify({added: false}));
+      } else {
+        successFunc(JSON.stringify({added: true}));
+      }
     }, error => {
       errorFunc(error);
     });
   }
 
-  removeResponse(token, response, successFunc, errorFunc) {
-    let decodedToken = jwtDecode(token);
-
+  removeResponse(token, phraseId, response, successFunc, errorFunc) {
     let query = {
       data: `
         query {
-          User(id: \\"` + decodedToken.userId + `\\") {
+          Phrase(id: \\"` + phraseId + `\\") {
             responses(
               filter: {
                 response: \\"` + response + `\\"
               }
             ) {
               id,
-              approved,
-              user {
+              phrases {
                 id
               }
             }
@@ -203,31 +152,30 @@ export default class {
     };
 
     this.gcClient.query(query, responseGc => {
-      let responses = responseGc.data.User.responses;
-      responses.forEach(toRemove => this._removeResponseCall(token, toRemove,
-        () => console.log("Removed response: " + toRemove.id), errorFunc));
-      successFunc(JSON.stringify({
-        response: "Removed all responses that match: " + response
-      }));
+      let responses = responseGc.data.Phrase.responses;
+
+      if (responses.length === 1) {
+        this._removeResponse(token, phraseId, responses[0], successFunc,
+          errorFunc);
+      } else {
+        errorFunc("No or duplicate response found");
+      }
     }, error => {
       errorFunc(error);
     });
   }
 
-  _removeResponseCall(token, response, successFunc, errorFunc) {
-    let decodedToken = jwtDecode(token);
-
+  _removeResponse(token, phraseId, response, successFunc, errorFunc) {
     let query;
-    if (response.user.length > 1 ||
-      (response.user[0].id === decodedToken.userId && response.approved)) {
+    if (response.phrases.length > 1) {
       query = {
         data: `
           mutation {
-            removeFromUserResponsesRelation(
-              userUserId: \\"` + decodedToken.userId + `\\",
+            removeFromPhraseResponseRelation(
+              phrasesPhraseId: \\"` + phraseId + `\\",
               responsesResponseId: \\"` + response.id + `\\"
             ) {
-              userUser {
+              phrasesPhrase {
                 id
               }
               responsesResponse {
@@ -237,7 +185,7 @@ export default class {
           }`,
         token: token
       };
-    } else if (response.user[0].id === decodedToken.userId) {
+    } else {
       query = {
         data: `
           mutation {
@@ -247,12 +195,15 @@ export default class {
           }`,
         token: token
       };
-    } else {
-      return errorFunc("False owner of response");
     }
 
     this.gcClient.query(query, response => {
-      successFunc(response);
+      if (response.data.removeFromPhraseResponseRelation === null ||
+          response.data.deleteResponse === null) {
+        successFunc(JSON.stringify({removed: false}));
+      } else {
+        successFunc(JSON.stringify({removed: true}));
+      }
     }, error => {
       errorFunc(error);
     });
