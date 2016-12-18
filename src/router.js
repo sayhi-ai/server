@@ -118,6 +118,26 @@ app.post('/getbotid', (req, res) => {
     error => errorHandler("Error getting phrases", error, res));
 });
 
+// Get the id of a phrase from its name
+app.post('/addbot', (req, res) => {
+  let token = extractAuthToken(req);
+  let data = req.body;
+  functionHandler.getBotHandler().addBot(token,
+    data.name, data.type, data.description,
+    response => res.send(response),
+    error => errorHandler("Error getting phrases", error, res));
+});
+
+// Get the id of a phrase from its name
+app.post('/linkbot', (req, res) => {
+  let token = extractAuthToken(req);
+  let data = req.body;
+  functionHandler.getBotHandler().linkBotWithUser(token,
+    data.botId,
+    response => res.send(response),
+    error => errorHandler("Error getting phrases", error, res));
+});
+
 /* ----------------------------------------------------------------------------
  * Phrase
  * ----------------------------------------------------------------------------

@@ -1,4 +1,3 @@
-import jwtDecode from "jwt-decode";
 import ENV_VARS from "../../ENV_VARS";
 
 export default class {
