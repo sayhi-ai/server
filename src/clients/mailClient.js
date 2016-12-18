@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import ENV_VARS from "../ENV_VARS";
+import ENV_VARS from "../util/ENV_VARS";
 
 export default class {
   constructor() {

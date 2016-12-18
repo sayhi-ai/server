@@ -11,7 +11,11 @@ const CONSTANTS = {
   SUPPORT_MAIL_PASSWORD: "Yf)A6)kr7!fTj([&]v:d[v`K6yZ,Lk.s@6tC=n'2",
   MAX_PHRASE_TOKEN_LENGTH: 50,
   MAX_RESPONSE_LENGTH: 300,
-  RESPONSE_VARIABLE: "$VAR"
+  RESPONSE_VARIABLE: "$VAR",
+  BASE_LOG_DIR: "./log",
+  HTTP_LOG_DIR: "./log/http",
+  SERVER_LOG_DIR: "./log/server",
+  SERVER_LOG_FILE: "./log/server/server.log"
 };
 
 if (process.env.NODE_ENV === "production") {

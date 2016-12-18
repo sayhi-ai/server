@@ -2,14 +2,49 @@ require('es6-promise').polyfill();
 import express from "express";
 import bodyParser from "body-parser";
 import * as authorization from 'auth-header';
+import morgan from 'morgan';
+import FileStreamRotator from 'file-stream-rotator';
+import fs from 'fs';
 import ClientsHandler from "./clients/clientsHandler";
 import FunctionHandler from "./functions/functionHandler";
-import ENV_VARS from "./ENV_VARS";
+import ENV_VARS from "./util/ENV_VARS";
+import logger from "./util/logger";
+var path = require('path');
+
+// Set up environment
+logger.info("Setting up server environment..");
+if (!fs.existsSync(ENV_VARS.CONSTANTS.BASE_LOG_DIR)) {
+  fs.mkdirSync(ENV_VARS.CONSTANTS.BASE_LOG_DIR);
+  fs.mkdirSync(ENV_VARS.CONSTANTS.HTTP_LOG_DIR);
+  fs.mkdirSync(ENV_VARS.CONSTANTS.SERVER_LOG_DIR);
+}
+
+if (!fs.existsSync(ENV_VARS.CONSTANTS.HTTP_LOG_DIR)) {
+  fs.mkdirSync(ENV_VARS.CONSTANTS.HTTP_LOG_DIR);
+}
+
+if (!fs.existsSync(ENV_VARS.CONSTANTS.SERVER_LOG_DIR)) {
+  fs.mkdirSync(ENV_VARS.CONSTANTS.SERVER_LOG_DIR);
+}
+logger.info("Server environment set up successfully.");
+
+// Set up HTTP request logging
+logger.info("Setting up HTTP logging..");
+const accessLogStream = FileStreamRotator.getStream({
+  date_format: 'YYYYMMDD',
+  filename: path.join(ENV_VARS.CONSTANTS.HTTP_LOG_DIR, 'access-%DATE%.log'),
+  frequency: 'daily',
+  verbose: false
+});
+logger.info("HTTP logging set up successfully.");
 
 // Set up express server
+logger.info("Setting up express server..");
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(morgan('combined', {stream: accessLogStream}));
+app.use(morgan('dev'));
 app.use(function(req, res, next) {
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Origin', ENV_VARS.CLIENT_URL);
@@ -23,8 +58,10 @@ app.use(function(req, res, next) {
     next();
   }
 });
+logger.info("Express server set up successfully.");
 
 // Set up handlers
+logger.info("Setting up server handlers..");
 const clientsHandler = new ClientsHandler();
 const functionHandler = new FunctionHandler(clientsHandler);
 const errorHandler = (error, detail, res) => {
@@ -34,12 +71,15 @@ const errorHandler = (error, detail, res) => {
     detail: detail
   }));
 };
+logger.info("Server handlers set up successfully.");
 
 // Other functions
+logger.info("Finishing server set up..");
 const extractAuthToken = req => {
   let auth = authorization.parse(req.get('authorization'));
   return auth.token;
 };
+logger.info("Server set up completed.");
 
 /* ----------------------------------------------------------------------------
  * Account
@@ -219,9 +259,10 @@ app.post('/removeresponse', (req, res) => {
 });
 
 // Start express server
+logger.info("Starting server..");
 const port = process.env.PORT || 8080;
 const server = app.listen(port, () => {
   const host = server.address().address;
   const port = server.address().port;
-  console.log('Express server listening at http://%s:%s', host, port);
+  logger.info("Server listening at http://" + host + ":" + port + ".");
 });

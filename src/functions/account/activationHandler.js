@@ -1,5 +1,5 @@
 import fs from 'fs';
-import ENV_VARS from "../../ENV_VARS";
+import ENV_VARS from "../../util/ENV_VARS";
 
 export default class {
   constructor(functionHandler, clientsHandler) {

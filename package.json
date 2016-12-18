@@ -68,10 +68,14 @@
     "body-parser": "^1.15.2",
     "es6-promise": "^3.3.1",
     "express": "^4.14.0",
+    "file-stream-rotator": "0.0.7",
     "fs": "0.0.1-security",
     "isomorphic-fetch": "^2.2.1",
     "jwt-decode": "^2.1.0",
-    "nodemailer": "^2.6.4"
+    "morgan": "^1.7.0",
+    "nodemailer": "^2.6.4",
+    "winston": "^2.3.0",
+    "winston-daily-rotate-file": "^1.4.0"
   },
   "devDependencies": {
     "babel-core": "^6.9.1",
