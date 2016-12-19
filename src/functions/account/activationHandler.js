@@ -1,5 +1,6 @@
 import fs from 'fs';
 import ENV_VARS from "../../util/ENV_VARS";
+import logger from "../../util/logger";
 
 export default class {
   constructor(functionHandler, clientsHandler) {
@@ -8,16 +9,19 @@ export default class {
   }
 
   sendActivationRequest(email, userId, firstName, successFunc, errorFunc) {
+    logger.debug("Sending activation request to " + email + "..");
+
     let activationCode = this._generateActivationCode();
     let activationLink = ENV_VARS.BASE_URL + '/activate?code=' + activationCode;
     let vars = [firstName, activationLink];
     this._sendWelcomeMail(email, vars,
-      () => this._saveActivationCode(userId, activationCode,
-        successFunc, errorFunc)
-      , errorFunc);
+      () => this._saveActivationCode(userId, activationCode, successFunc,
+        errorFunc), errorFunc);
   }
 
   activateAccount(code, successFunc, errorFunc) {
+    logger.debug("Request to activate account received.");
+
     let query = {
       data: `
         query {
@@ -37,7 +41,15 @@ export default class {
           successFunc, errorFunc),
         errorFunc);
     }, error => {
-      errorFunc(error);
+      let errorObj = {
+        file: "activationHandler.js",
+        method: "activateAccount",
+        code: 400,
+        error: error,
+        message: "Unable to activate account. Wrong or old link maybe?"
+      };
+
+      errorFunc(errorObj);
     });
   }
 
@@ -53,9 +65,18 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
+      logger.debug("Account status updated to AUTH for user: " + id);
       successFunc(response);
     }, error => {
-      errorFunc(error);
+      let errorObj = {
+        file: "activationHandler.js",
+        method: "_updateAccountStatus",
+        code: 500,
+        error: error,
+        message: "Unable to update account status."
+      };
+
+      errorFunc(errorObj);
     });
   }
 
@@ -71,9 +92,18 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
+      logger.debug("Activation object deleted");
       successFunc(response);
     }, error => {
-      errorFunc(error);
+      let errorObj = {
+        file: "activationHandler.js",
+        method: "_deleteActivationObject",
+        code: 500,
+        error: error,
+        message: "Unable to delete activation object."
+      };
+
+      errorFunc(errorObj);
     });
   }
 
@@ -96,10 +126,19 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
+      logger.debug("Activation code saved for user: " + userId + ".");
       this._linkActivationToUser(userId, response.data.createActivation.id,
         successFunc, errorFunc);
     }, error => {
-      errorFunc(error);
+      let errorObj = {
+        file: "activationHandler.js",
+        method: "_saveActivationCode",
+        code: 500,
+        error: error,
+        message: "Unable to save activation code."
+      };
+
+      errorFunc(errorObj);
     });
   }
 
@@ -123,9 +162,18 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
+      logger.debug("Activation code linked with user: " + userId + ".");
       successFunc(response);
     }, error => {
-      errorFunc(error);
+      let errorObj = {
+        file: "activationHandler.js",
+        method: "_linkActivationToUser",
+        code: 500,
+        error: error,
+        message: "Unable to link activation object with user object."
+      };
+
+      errorFunc(errorObj);
     });
   }
 
@@ -141,6 +189,8 @@ export default class {
         }
       }
     );
+
+    logger.debug("Activation email sent to " + email + ".");
   }
 
   _generateActivationCode() {

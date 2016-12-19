@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import ENV_VARS from "../util/ENV_VARS";
+import logger from "../util/logger";
 
 export default class {
   constructor() {
@@ -17,6 +18,8 @@ export default class {
   }
 
   sendMail(recipient, subject, content, successFunc, errorFunc) {
+    logger.debug("Sending mail to: " + recipient +
+      " on subject: " + subject + "..");
     var mailOptions = {
       from: '"sayHi.ai" <info@sayhi.ai>',
       to: recipient,
@@ -26,8 +29,18 @@ export default class {
 
     this.transporter.sendMail(mailOptions, function(error, response) {
       if (error) {
-        errorFunc(error);
+        let errorObj = {
+          file: "mailClient.js",
+          method: "sendMail",
+          code: 500,
+          error: error,
+          message: "Error with graph QL query."
+        };
+
+        errorFunc(errorObj);
       } else {
+        logger.debug("Mail sent to: " + recipient +
+          " on subject: " + subject + ".");
         successFunc(response);
       }
     });

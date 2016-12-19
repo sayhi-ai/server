@@ -1,5 +1,6 @@
 import jwtDecode from "jwt-decode";
 import ENV_VARS from "../../util/ENV_VARS";
+import logger from "../../util/logger";
 
 export default class {
   constructor(functionHandler, clientsHandler) {
@@ -7,6 +8,7 @@ export default class {
   }
 
   getBotId(token, botName, successFunc, errorFunc) {
+    logger.debug("Getting id for bot: " + botName + "..");
     let decodedToken = jwtDecode(token);
     let query = {
       data: `
@@ -22,11 +24,31 @@ export default class {
 
     this.gcClient.query(query, response => {
       if (response.data.User.bots.length !== 1) {
-        return errorFunc("Error identifying bot with name: " + botName);
+        let errorObj = {
+          file: "botHandler.js",
+          method: "getBotId",
+          code: 400,
+          error: "",
+          message: "Error identifying bot with name: " + botName + "."
+        };
+
+        return errorFunc(errorObj);
       }
+
       let botId = response.data.User.bots[0].id;
+      logger.debug("Got id for bot: " + botName + ".");
       successFunc(JSON.stringify({id: botId}));
-    }, error => errorFunc(error));
+    }, error => {
+      let errorObj = {
+        file: "botHandler.js",
+        method: "getBotId",
+        code: 400,
+        error: error,
+        message: "Error getting id for bot with name: " + botName + "."
+      };
+
+      return errorFunc(errorObj);
+    });
   }
 
   getBots(token, successFunc, errorFunc) {
@@ -47,7 +69,17 @@ export default class {
     this.gcClient.query(query, response => {
       let bots = response.data.User.bots;
       successFunc(JSON.stringify({bots: bots}));
-    }, error => errorFunc(error));
+    }, error => {
+      let errorObj = {
+        file: "botHandler.js",
+        method: "getBots",
+        code: 400,
+        error: error,
+        message: "Error getting bots for user: " + decodedToken.userId + "."
+      };
+
+      return errorFunc(errorObj);
+    });
   }
 
   addBot(token, name, type, description, successFunc, errorFunc) {
@@ -87,10 +119,26 @@ export default class {
         this._createNewBot(token, name, type, description,
           successFunc, errorFunc);
       } else {
-        errorFunc("A bot with this name already exists");
+        let errorObj = {
+          file: "botHandler.js",
+          method: "addBot",
+          code: 400,
+          error: "",
+          message: "A bot with this name already exists."
+        };
+
+        return errorFunc(errorObj);
       }
     }, error => {
-      errorFunc(error);
+      let errorObj = {
+        file: "botHandler.js",
+        method: "addBot",
+        code: 400,
+        error: error,
+        message: "Error adding bot."
+      };
+
+      return errorFunc(errorObj);
     });
   }
 
@@ -113,7 +161,15 @@ export default class {
       this._linkBotWithUser(token, responseQl.data.createBot.id,
         successFunc, errorFunc);
     }, error => {
-      errorFunc(error);
+      let errorObj = {
+        file: "botHandler.js",
+        method: "_createNewBot",
+        code: 500,
+        error: error,
+        message: "Error creating a new bot."
+      };
+
+      return errorFunc(errorObj);
     });
   }
 
@@ -137,10 +193,26 @@ export default class {
       if (bots.length === 0) {
         this._linkBotWithUser(token, botId, successFunc, errorFunc);
       } else {
-        errorFunc("A bot with this name already exists");
+        let errorObj = {
+          file: "botHandler.js",
+          method: "linkBotWithUser",
+          code: 400,
+          error: "",
+          message: "A bot with this name already exists."
+        };
+
+        return errorFunc(errorObj);
       }
     }, error => {
-      errorFunc(error);
+      let errorObj = {
+        file: "botHandler.js",
+        method: "linkBotWithUser",
+        code: 400,
+        error: error,
+        message: "Error finding bots for user to link with."
+      };
+
+      return errorFunc(errorObj);
     });
   }
 
@@ -172,7 +244,16 @@ export default class {
         successFunc(JSON.stringify({added: true}));
       }
     }, error => {
-      errorFunc(error);
+      let errorObj = {
+        file: "botHandler.js",
+        method: "_linkBotWithUser",
+        code: 500,
+        error: error,
+        message: "Error linking bot: " + botId + " with user: " +
+          decodedToken.userId + "."
+      };
+
+      return errorFunc(errorObj);
     });
   }
 

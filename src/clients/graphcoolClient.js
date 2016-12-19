@@ -32,7 +32,15 @@ export default class {
           try {
             return bodyFunc();
           } catch (e) {
-            errorFunc(e);
+            let error = {
+              file: "graphcoolClient.js",
+              method: "_safeQuery",
+              code: 500,
+              error: e,
+              message: "Error with graph QL query."
+            };
+
+            errorFunc(error);
           }
         })()
       })
@@ -43,24 +51,64 @@ export default class {
               try {
                 successFunc(json);
               } catch (e) {
-                errorFunc(e);
+                let error = {
+                  file: "graphcoolClient.js",
+                  method: "_safeQuery",
+                  code: 500,
+                  error: e,
+                  message: "Error with graph QL query."
+                };
+
+                errorFunc(error);
               }
             });
           } else {
             response.json().then(json => {
               try {
-                errorFunc(json);
+                let error = {
+                  file: "graphcoolClient.js",
+                  method: "_safeQuery",
+                  code: 500,
+                  error: json,
+                  message: "Error with graph QL query."
+                };
+
+                errorFunc(error);
               } catch (e) {
-                errorFunc(e);
+                let error = {
+                  file: "graphcoolClient.js",
+                  method: "_safeQuery",
+                  code: 500,
+                  error: e,
+                  message: "Error with graph QL query."
+                };
+
+                errorFunc(error);
               }
             });
           }
         } catch (e) {
-          errorFunc(e);
+          let error = {
+            file: "graphcoolClient.js",
+            method: "_safeQuery",
+            code: 500,
+            error: e,
+            message: "Error with graph QL query."
+          };
+
+          errorFunc(error);
         }
       });
     } catch (e) {
-      errorFunc(e);
+      let error = {
+        file: "graphcoolClient.js",
+        method: "_safeQuery",
+        code: 500,
+        error: e,
+        message: "Error with graph QL query."
+      };
+
+      errorFunc(error);
     }
   }
 

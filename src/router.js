@@ -64,11 +64,15 @@ logger.info("Express server set up successfully.");
 logger.info("Setting up server handlers..");
 const clientsHandler = new ClientsHandler();
 const functionHandler = new FunctionHandler(clientsHandler);
-const errorHandler = (error, detail, res) => {
-  // TODO: Add some logging :)
-  return res.status(500).send(JSON.stringify({
+const errorHandler = (error, errorObj, res) => {
+  logger.error(
+    "LOCATION: " + errorObj.file + ":" + errorObj.method +
+    " MESSAGE: " + error + " - " + errorObj.message +
+    " DATA: " + JSON.stringify({errorData: errorObj.error})
+  );
+  return res.status(errorObj.code).send(JSON.stringify({
     error: error,
-    detail: detail
+    detail: errorObj.message
   }));
 };
 logger.info("Server handlers set up successfully.");
