@@ -53,6 +53,7 @@ export default class {
 
   getBots(token, successFunc, errorFunc) {
     let decodedToken = jwtDecode(token);
+    logger.debug("Getting all bots for user: " + decodedToken.userId + "..");
     let query = {
       data: `
         query {
@@ -68,6 +69,7 @@ export default class {
 
     this.gcClient.query(query, response => {
       let bots = response.data.User.bots;
+      logger.debug("Got all bots for user: " + decodedToken.userId + ".");
       successFunc(JSON.stringify({bots: bots}));
     }, error => {
       let errorObj = {
@@ -83,16 +85,34 @@ export default class {
   }
 
   addBot(token, name, type, description, successFunc, errorFunc) {
+    logger.debug("Adding a bot with name:" + name + ", type:" + type +
+      ", description:" + description + "..");
     if (name === "" || name.length >
       ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH) {
-      return errorFunc("Length of name must be between 0 and " +
-        ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH);
+      let errorObj = {
+        file: "botHandler.js",
+        method: "addBot",
+        code: 400,
+        error: "",
+        message: "Length of name must be between 0 and " +
+          ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH + "."
+      };
+
+      return errorFunc(errorObj);
     }
 
     if (type === "" || type.length >
       ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH) {
-      return errorFunc("Length of type must be between 0 and " +
-        ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH);
+      let errorObj = {
+        file: "botHandler.js",
+        method: "addBot",
+        code: 400,
+        error: "",
+        message: "Length of type must be between 0 and " +
+        ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH + "."
+      };
+
+      return errorFunc(errorObj);
     }
 
     if (description === null) {
@@ -116,6 +136,8 @@ export default class {
     this.gcClient.query(query, responseQl => {
       let bots = responseQl.data.User.bots;
       if (bots.length === 0) {
+        logger.debug("No bot with the given information exists for user: " +
+          decodedToken.userId + ", creating a new one.");
         this._createNewBot(token, name, type, description,
           successFunc, errorFunc);
       } else {
@@ -158,6 +180,7 @@ export default class {
     };
 
     this.gcClient.query(query, responseQl => {
+      logger.debug("Created new bot. Linking it with user..");
       this._linkBotWithUser(token, responseQl.data.createBot.id,
         successFunc, errorFunc);
     }, error => {
@@ -173,14 +196,16 @@ export default class {
     });
   }
 
-  linkBotWithUser(token, botId, successFunc, errorFunc) {
+  linkBotWithUser(token, botId, botName, successFunc, errorFunc) {
     let decodedToken = jwtDecode(token);
+    logger.debug("Linking bot: " + botId + " it with user: " +
+      decodedToken.userId + "..");
 
     let query = {
       data: `
         query {
           User(id: \\"` + decodedToken.userId + `\\") {
-            bots(filter: {id: \\"` + botId + `\\"}) {
+            bots(filter: {name: \\"` + botName + `\\"}) {
               id
             }
           }
@@ -191,6 +216,8 @@ export default class {
     this.gcClient.query(query, responseQl => {
       let bots = responseQl.data.User.bots;
       if (bots.length === 0) {
+        logger.debug("No existing bot with name exists for user, linking it " +
+          "with user now..");
         this._linkBotWithUser(token, botId, successFunc, errorFunc);
       } else {
         let errorObj = {
@@ -239,8 +266,11 @@ export default class {
 
     this.gcClient.query(query, response => {
       if (response.data.addToUserBotRelation === null) {
+        logger.warn("Did not link bot because a connection already exists " +
+          "between user and bot.");
         successFunc(JSON.stringify({added: false}));
       } else {
+        logger.debug("Linked bot with user successfully.");
         successFunc(JSON.stringify({added: true}));
       }
     }, error => {

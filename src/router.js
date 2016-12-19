@@ -91,7 +91,7 @@ logger.info("Server set up completed.");
  */
 
 // Activate account
-app.get('/activate', (req, res) => {
+app.get('/account/activate', (req, res) => {
   functionHandler.getActivationHandler().activateAccount(req.query.code,
     response => res.redirect('https://google.com'),
     error => errorHandler("Error activating account", error, res));
@@ -108,7 +108,7 @@ app.post('/login', (req, res) => {
 });
 
 // Link account with auth0
-app.post('/linkaccountauth0', (req, res) => {
+app.post('/account/link', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
   functionHandler.getUserHandler().linkAccountAuth0(data.firstName,
@@ -118,7 +118,7 @@ app.post('/linkaccountauth0', (req, res) => {
 });
 
 // Create an account
-app.post('/createaccount', (req, res) => {
+app.post('/account/create', (req, res) => {
   let data = req.body;
   functionHandler.getUserHandler().addUser(data.firstName, data.lastName,
     data.email, data.password,
@@ -127,12 +127,12 @@ app.post('/createaccount', (req, res) => {
 });
 
 // Change password
-app.post('/changepassword', (req, res) => {
+app.post('/account/changepassword', (req, res) => {
 
 });
 
 // Add email to mailing list
-app.post('/subscribe', (req, res) => {
+app.post('/account/subscribe', (req, res) => {
   let data = req.body;
   functionHandler.getMailingListHandler().addToMailingList(data.email,
     response => res.send(response),
@@ -140,7 +140,7 @@ app.post('/subscribe', (req, res) => {
 });
 
 // Remove email from mailing list
-app.post('/unsubscribe', (req, res) => {
+app.post('/account/unsubscribe', (req, res) => {
   let data = req.body;
   functionHandler.getMailingListHandler().removeFromMailingList(data.email,
     response => res.send(response),
@@ -153,7 +153,7 @@ app.post('/unsubscribe', (req, res) => {
  */
 
 // Get the id of a phrase from its name
-app.post('/getbotid', (req, res) => {
+app.post('/response/bot/id', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
   functionHandler.getBotHandler().getBotId(token,
@@ -163,7 +163,7 @@ app.post('/getbotid', (req, res) => {
 });
 
 // Get the id of a phrase from its name
-app.post('/addbot', (req, res) => {
+app.post('/response/bot/add', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
   functionHandler.getBotHandler().addBot(token,
@@ -173,11 +173,11 @@ app.post('/addbot', (req, res) => {
 });
 
 // Get the id of a phrase from its name
-app.post('/linkbot', (req, res) => {
+app.post('/response/bot/link', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
   functionHandler.getBotHandler().linkBotWithUser(token,
-    data.botId,
+    data.botId, data.botName,
     response => res.send(response),
     error => errorHandler("Error getting phrases", error, res));
 });
@@ -188,7 +188,7 @@ app.post('/linkbot', (req, res) => {
  */
 
 // Get the id of a phrase from its name
-app.post('/getphraseid', (req, res) => {
+app.post('/response/phrase/id', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
   functionHandler.getPhraseHandler().getPhraseId(token,
@@ -198,7 +198,7 @@ app.post('/getphraseid', (req, res) => {
 });
 
 // Get all phrases a user has
-app.post('/getphrases', (req, res) => {
+app.post('/response/phrase/all', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
   functionHandler.getPhraseHandler().getPhrases(token,
@@ -208,7 +208,7 @@ app.post('/getphrases', (req, res) => {
 });
 
 // Add a phrase
-app.post('/addphrase', (req, res) => {
+app.post('/response/phrase/add', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
   functionHandler.getPhraseHandler().addPhrase(token, data.botId,
@@ -223,7 +223,7 @@ app.post('/addphrase', (req, res) => {
  */
 
 // Get response
-app.post('/getresponse', (req, res) => {
+app.post('/response/response/get', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
   functionHandler.getResponseHandler().getResponse(token, data.botId,
@@ -233,7 +233,7 @@ app.post('/getresponse', (req, res) => {
 });
 
 // Get all responses belonging to a phrase
-app.post('/getresponses', (req, res) => {
+app.post('/response/response/all', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
   functionHandler.getResponseHandler().getResponses(token, data.botId,
@@ -243,7 +243,7 @@ app.post('/getresponses', (req, res) => {
 });
 
 // Add response
-app.post('/addresponse', (req, res) => {
+app.post('/response/response/add', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
   functionHandler.getResponseHandler().addResponse(token, data.phraseId,
@@ -253,7 +253,7 @@ app.post('/addresponse', (req, res) => {
 });
 
 // Remove response
-app.post('/removeresponse', (req, res) => {
+app.post('/response/response/remove', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
   functionHandler.getResponseHandler().removeResponse(token, data.phraseId,
