@@ -179,9 +179,11 @@ export default class {
           "exists between phrase and response.");
         successFunc(JSON.stringify({added: false}));
       } else {
+        let responseId = response.data.addToPhraseResponseRelation.
+          responsesResponse.id;
         logger.debug("Linked response: " + responseId + " with phrase: " +
           phraseId + "successfully.");
-        successFunc(JSON.stringify({added: true}));
+        successFunc(JSON.stringify({added: true, id: responseId}));
       }
     }, error => {
       let errorObj = {

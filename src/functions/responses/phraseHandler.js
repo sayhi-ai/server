@@ -67,7 +67,7 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
-      let phrases = [{}];
+      let phrases = [];
       response.data.Bot.phrases.forEach(phrase =>
         phrases.push({id: phrase.id, phrase: phrase.phrase}));
       logger.debug("Got all phrases for bot: " + botId);
@@ -200,9 +200,10 @@ export default class {
           "exists between bot and phrase.");
         successFunc(JSON.stringify({added: false}));
       } else {
+        let phraseId = response.data.addToBotPhraseRelation.phrasesPhrase.id;
         logger.debug("Linked phrase: " + phraseId + " with bot: " +
           botId + "successfully.");
-        successFunc(JSON.stringify({added: true}));
+        successFunc(JSON.stringify({added: true, id: phraseId}));
       }
     }, error => {
       let errorObj = {
