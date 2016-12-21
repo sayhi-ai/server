@@ -180,8 +180,9 @@ export default class {
           "between user and bot.");
         successFunc(JSON.stringify({added: false}));
       } else {
+        let botId = response.data.addToUserBotRelation.botsBot.id;
         logger.debug("Linked bot with user successfully.");
-        successFunc(JSON.stringify({added: true}));
+        successFunc(JSON.stringify({added: true, id: botId}));
       }
     }, error => {
       let errorObj = {
