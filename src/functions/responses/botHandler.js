@@ -4,51 +4,8 @@ import logger from "../../util/logger";
 
 export default class {
   constructor(functionHandler, clientsHandler) {
+    this.phraseHandler = functionHandler.getPhraseHandler();
     this.gcClient = clientsHandler.getGCClient();
-  }
-
-  getBotId(token, botName, successFunc, errorFunc) {
-    logger.debug("Getting id for bot: " + botName + "..");
-    let decodedToken = jwtDecode(token);
-    let query = {
-      data: `
-        query {
-          User(id: \\"` + decodedToken.userId + `\\") {
-            bots(filter: {name: \\"` + botName + `\\"}) {
-              id
-            }
-          }
-        }`,
-      token: token
-    };
-
-    this.gcClient.query(query, response => {
-      if (response.data.User.bots.length !== 1) {
-        let errorObj = {
-          file: "botHandler.js",
-          method: "getBotId",
-          code: 400,
-          error: "",
-          message: "Error identifying bot with name: " + botName + "."
-        };
-
-        return errorFunc(errorObj);
-      }
-
-      let botId = response.data.User.bots[0].id;
-      logger.debug("Got id for bot: " + botName + ".");
-      successFunc(JSON.stringify({id: botId}));
-    }, error => {
-      let errorObj = {
-        file: "botHandler.js",
-        method: "getBotId",
-        code: 400,
-        error: error,
-        message: "Error getting id for bot with name: " + botName + "."
-      };
-
-      return errorFunc(errorObj);
-    });
   }
 
   getBots(token, successFunc, errorFunc) {
@@ -196,53 +153,6 @@ export default class {
     });
   }
 
-  linkBotWithUser(token, botId, botName, successFunc, errorFunc) {
-    let decodedToken = jwtDecode(token);
-    logger.debug("Linking bot: " + botId + " it with user: " +
-      decodedToken.userId + "..");
-
-    let query = {
-      data: `
-        query {
-          User(id: \\"` + decodedToken.userId + `\\") {
-            bots(filter: {name: \\"` + botName + `\\"}) {
-              id
-            }
-          }
-        }`,
-      token: token
-    };
-
-    this.gcClient.query(query, responseQl => {
-      let bots = responseQl.data.User.bots;
-      if (bots.length === 0) {
-        logger.debug("No existing bot with name exists for user, linking it " +
-          "with user now..");
-        this._linkBotWithUser(token, botId, successFunc, errorFunc);
-      } else {
-        let errorObj = {
-          file: "botHandler.js",
-          method: "linkBotWithUser",
-          code: 400,
-          error: "",
-          message: "A bot with this name already exists."
-        };
-
-        return errorFunc(errorObj);
-      }
-    }, error => {
-      let errorObj = {
-        file: "botHandler.js",
-        method: "linkBotWithUser",
-        code: 400,
-        error: error,
-        message: "Error finding bots for user to link with."
-      };
-
-      return errorFunc(errorObj);
-    });
-  }
-
   _linkBotWithUser(token, botId, successFunc, errorFunc) {
     let decodedToken = jwtDecode(token);
 
@@ -287,7 +197,104 @@ export default class {
     });
   }
 
-  removeBot(token, botName, successFunc, errorFunc) {
+  removeBot(token, botId, successFunc, errorFunc) {
+    logger.debug("Preparing to remove bot: " + botId + "..");
+    this._removePhrasesFromBot(token, botId,
+      response => this._removeBot(token, botId, successFunc, errorFunc),
+      errorFunc);
+  }
 
+  _removePhraseResponsesRecursive(token, phrases, successFunc, errorFunc) {
+    if (phrases.length === 0) {
+      return successFunc();
+    }
+    const phrase = phrases.pop();
+    const context = this;
+    const promise = new Promise((resolve, reject) =>
+      context.phraseHandler._removeResponsesFromPhrase(token, phrase.id,
+        resolve, reject));
+
+    promise.then(result =>
+      this._removePhraseResponsesRecursive(token, phrases, successFunc,
+        errorFunc));
+  }
+
+  _removePhrasesFromBot(token, botId, successFunc, errorFunc) {
+    logger.debug("Removing phrases from bot: " + botId + "..");
+    let query = {
+      data: `
+        query {
+          Bot(id: \\"` + botId + `\\") {
+            phrases {
+              id
+            }
+          }
+        }`,
+      token: token
+    };
+
+    this.gcClient.query(query, responseGc => {
+      let phrases = responseGc.data.Bot.phrases;
+
+      let promise = new Promise((resolve, reject) =>
+        this._removePhraseResponsesRecursive(token, phrases.slice(), resolve,
+          reject));
+
+      promise
+        .then(result => {
+          phrases = phrases.map(phrase => {
+            const context = this;
+            return new Promise((resolve, reject) =>
+              context.phraseHandler._removePhrase(token, phrase.id, resolve,
+                reject));
+          });
+
+          return Promise.all(phrases);
+        })
+        .then(result => successFunc(result))
+        .catch(error => {
+          let errorObj = {
+            file: "botHandler.js",
+            method: "_removePhrasesFromBot",
+            code: 500,
+            error: error,
+            message: "Unable to remove bot: " + botId + "."
+          };
+
+          return errorFunc(errorObj);
+        });
+    }, errorFunc);
+  }
+
+  _removeBot(token, botId, successFunc, errorFunc) {
+    let query = {
+      data: `
+          mutation {
+            deleteBot(id: \\"` + botId + `\\") {
+              id
+            }
+          }`,
+      token: token
+    };
+
+    this.gcClient.query(query, response => {
+      if (response.data.deleteBot === null) {
+        logger.warn("Did not remove bot.");
+        successFunc(JSON.stringify({removed: false}));
+      } else {
+        logger.debug("Removed bot.");
+        successFunc(JSON.stringify({removed: true}));
+      }
+    }, error => {
+      let errorObj = {
+        file: "botHandler.js",
+        method: "_removeBot",
+        code: 500,
+        error: error,
+        message: "Unable to remove bot: " + botId + "."
+      };
+
+      return errorFunc(errorObj);
+    });
   }
 }

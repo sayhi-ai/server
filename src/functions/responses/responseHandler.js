@@ -6,29 +6,28 @@ export default class {
     this.gcClient = clientsHandler.getGCClient();
   }
 
-  getResponses(token, botId, phraseId, successFunc, errorFunc) {
+  getResponses(token, phraseId, successFunc, errorFunc) {
     logger.debug("Getting responses for phrase: " + phraseId + "..");
-    this._getResponses(token, botId, phraseId,
+    this._getResponses(token, phraseId,
       response => successFunc(JSON.stringify({responses: response})),
       errorFunc);
   }
 
-  getResponse(token, botId, phraseId, successFunc, errorFunc) {
+  getResponse(token, phraseId, successFunc, errorFunc) {
     logger.debug("Getting a response for phrase: " + phraseId + "..");
-    this._getResponses(token, botId, phraseId,
+    this._getResponses(token, phraseId,
       response => this._chooseResponse(response, successFunc),
       errorFunc);
   }
 
-  _getResponses(token, botId, phraseId, successFunc, errorFunc) {
+  _getResponses(token, phraseId, successFunc, errorFunc) {
     let query = {
       data: `
         query {
-          Bot(id: \\"` + botId + `\\") {
-            phrases(filter: {id: \\"` + phraseId + `\\"}) {
-              responses {
-                response
-              }
+          Phrase(id: \\"` + phraseId + `\\") {
+            responses {
+              id,
+              response
             }
           }
         }`,
@@ -36,11 +35,8 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
-      let responses = [];
-      response.data.Bot.phrases[0].responses.forEach(response =>
-        responses.push(response.response));
       logger.debug("Got responses for phrase: " + phraseId + ".");
-      successFunc(responses);
+      successFunc(response.data.Phrase.responses);
     }, error => {
       let errorObj = {
         file: "responseHandler.js",
@@ -182,7 +178,7 @@ export default class {
         let responseId = response.data.addToPhraseResponseRelation.
           responsesResponse.id;
         logger.debug("Linked response: " + responseId + " with phrase: " +
-          phraseId + "successfully.");
+          phraseId + " successfully.");
         successFunc(JSON.stringify({added: true, id: responseId}));
       }
     }, error => {
@@ -199,23 +195,15 @@ export default class {
     });
   }
 
-  removeResponse(token, phraseId, response, successFunc, errorFunc) {
-    logger.debug("Removing response: " + response + " from phrase: " +
-      phraseId + ".");
+  removeResponse(token, phraseId, responseId, successFunc, errorFunc) {
+    logger.debug("Removing response: " + responseId + "..");
 
     let query = {
       data: `
         query {
-          Phrase(id: \\"` + phraseId + `\\") {
-            responses(
-              filter: {
-                response: \\"` + response + `\\"
-              }
-            ) {
-              id,
-              phrases {
-                id
-              }
+          Response(id: \\"` + responseId + `\\") {
+            phrases {
+              id
             }
           }
         }`,
@@ -223,22 +211,13 @@ export default class {
     };
 
     this.gcClient.query(query, responseGc => {
-      let responses = responseGc.data.Phrase.responses;
-
-      if (responses.length === 1) {
+      if (responseGc.data.Response.phrases.length === 1) {
         logger.debug("Response found to remove.");
-        this._removeResponse(token, phraseId, responses[0], successFunc,
-          errorFunc);
+        this._removeResponse(token, responseId, successFunc, errorFunc);
       } else {
-        let errorObj = {
-          file: "responseHandler.js",
-          method: "removeResponse",
-          code: 400,
-          error: "",
-          message: "No or duplicate response found."
-        };
-
-        return errorFunc(errorObj);
+        logger.debug("Response found to unlink from phrase.");
+        this._unlinkResponse(token, phraseId, responseId, successFunc,
+          errorFunc);
       }
     }, error => {
       let errorObj = {
@@ -254,41 +233,59 @@ export default class {
     });
   }
 
-  _removeResponse(token, phraseId, response, successFunc, errorFunc) {
-    let query;
-    if (response.phrases.length > 1) {
-      query = {
-        data: `
-          mutation {
-            removeFromPhraseResponseRelation(
-              phrasesPhraseId: \\"` + phraseId + `\\",
-              responsesResponseId: \\"` + response.id + `\\"
-            ) {
-              phrasesPhrase {
-                id
-              }
-              responsesResponse {
-                id
-              }
+  _unlinkResponse(token, phraseId, responseId, successFunc, errorFunc) {
+    let query = {
+      data: `
+        mutation {
+          removeFromPhraseResponseRelation(
+            phrasesPhraseId: \\"` + phraseId + `\\",
+            responsesResponseId: \\"` + responseId + `\\"
+          ) {
+            phrasesPhrase {
+              id
             }
-          }`,
-        token: token
+            responsesResponse {
+              id
+            }
+          }
+        }`,
+      token: token
+    };
+
+    this.gcClient.query(query, response => {
+      if (response.data.removeFromPhraseResponseRelation === null) {
+        logger.warn("Did not unlink response.");
+        successFunc(JSON.stringify({removed: false}));
+      } else {
+        logger.debug("Unlinked response.");
+        successFunc(JSON.stringify({removed: true}));
+      }
+    }, error => {
+      let errorObj = {
+        file: "responseHandler.js",
+        method: "_removeResponse",
+        code: 500,
+        error: error,
+        message: "Unable to remove response: " + responseId + "."
       };
-    } else {
-      query = {
-        data: `
+
+      return errorFunc(errorObj);
+    });
+  }
+
+  _removeResponse(token, responseId, successFunc, errorFunc) {
+    let query = {
+      data: `
           mutation {
-            deleteResponse(id: \\"` + response.id + `\\") {
+            deleteResponse(id: \\"` + responseId + `\\") {
               id
             }
           }`,
-        token: token
-      };
-    }
+      token: token
+    };
 
     this.gcClient.query(query, response => {
-      if (response.data.removeFromPhraseResponseRelation === null ||
-          response.data.deleteResponse === null) {
+      if (response.data.deleteResponse === null) {
         logger.warn("Did not remove response.");
         successFunc(JSON.stringify({removed: false}));
       } else {
@@ -301,7 +298,7 @@ export default class {
         method: "_removeResponse",
         code: 500,
         error: error,
-        message: "Unable to remove response: " + response + "."
+        message: "Unable to remove response: " + responseId + "."
       };
 
       return errorFunc(errorObj);

@@ -10,9 +10,9 @@ export default class {
     this.mailingListHandler = new MailingListHandler(this, clientsHandler);
     this.userHandler = new UserHandler(this, clientsHandler);
     this.activationHandler = new ActivationHandler(this, clientsHandler);
-    this.botHandler = new BotHandler(this, clientsHandler);
-    this.phraseHandler = new PhraseHandler(this, clientsHandler);
     this.responseHandler = new ResponseHandler(this, clientsHandler);
+    this.phraseHandler = new PhraseHandler(this, clientsHandler);
+    this.botHandler = new BotHandler(this, clientsHandler);
   }
 
   getMailingListHandler() {

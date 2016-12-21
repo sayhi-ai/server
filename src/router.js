@@ -30,6 +30,7 @@ logger.info("Server environment set up successfully.");
 
 // Set up HTTP request logging
 logger.info("Setting up HTTP logging..");
+// noinspection Eslint
 const accessLogStream = FileStreamRotator.getStream({
   date_format: 'YYYYMMDD',
   filename: path.join(ENV_VARS.CONSTANTS.HTTP_LOG_DIR, 'access-%DATE%.log'),
@@ -152,50 +153,38 @@ app.post('/account/unsubscribe', (req, res) => {
  * ----------------------------------------------------------------------------
  */
 
-// Get the id of a phrase from its name
-app.post('/response/bot/id', (req, res) => {
+// Get all bots a user has
+app.post('/response/bot/all', (req, res) => {
   let token = extractAuthToken(req);
-  let data = req.body;
   functionHandler.getBotHandler().getBotId(token,
-    data.botName,
     response => res.send(response),
-    error => errorHandler("Error getting phrases", error, res));
+    error => errorHandler("Error getting bots.", error, res));
 });
 
-// Get the id of a phrase from its name
+// Add a bot
 app.post('/response/bot/add', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
   functionHandler.getBotHandler().addBot(token,
     data.name, data.type, data.description,
     response => res.send(response),
-    error => errorHandler("Error getting phrases", error, res));
+    error => errorHandler("Error adding bot.", error, res));
 });
 
-// Get the id of a phrase from its name
-app.post('/response/bot/link', (req, res) => {
+// Remove a bot
+app.post('/response/bot/remove', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getBotHandler().linkBotWithUser(token,
-    data.botId, data.botName,
+  functionHandler.getBotHandler().removeBot(token,
+    data.botId,
     response => res.send(response),
-    error => errorHandler("Error getting phrases", error, res));
+    error => errorHandler("Error removing bot.", error, res));
 });
 
 /* ----------------------------------------------------------------------------
  * Phrase
  * ----------------------------------------------------------------------------
  */
-
-// Get the id of a phrase from its name
-app.post('/response/phrase/id', (req, res) => {
-  let token = extractAuthToken(req);
-  let data = req.body;
-  functionHandler.getPhraseHandler().getPhraseId(token,
-    data.botId, data.phrase,
-    response => res.send(response),
-    error => errorHandler("Error getting phrases", error, res));
-});
 
 // Get all phrases a user has
 app.post('/response/phrase/all', (req, res) => {
@@ -204,7 +193,7 @@ app.post('/response/phrase/all', (req, res) => {
   functionHandler.getPhraseHandler().getPhrases(token,
     data.botId,
     response => res.send(response),
-    error => errorHandler("Error getting phrases", error, res));
+    error => errorHandler("Error getting phrases.", error, res));
 });
 
 // Add a phrase
@@ -214,7 +203,16 @@ app.post('/response/phrase/add', (req, res) => {
   functionHandler.getPhraseHandler().addPhrase(token, data.botId,
     data.phrase,
     response => res.send(response),
-    error => errorHandler("Error adding a phrase", error, res));
+    error => errorHandler("Error adding phrase.", error, res));
+});
+
+// Remove a phrase
+app.post('/response/phrase/remove', (req, res) => {
+  let token = extractAuthToken(req);
+  let data = req.body;
+  functionHandler.getPhraseHandler().removePhrase(token, data.phraseId,
+    response => res.send(response),
+    error => errorHandler("Error removing phrase.", error, res));
 });
 
 /* ----------------------------------------------------------------------------
@@ -226,20 +224,18 @@ app.post('/response/phrase/add', (req, res) => {
 app.post('/response/response/get', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getResponseHandler().getResponse(token, data.botId,
-    data.phraseId,
+  functionHandler.getResponseHandler().getResponse(token, data.phraseId,
     response => res.send(response),
-    error => errorHandler("Error getting response", error, res));
+    error => errorHandler("Error getting response.", error, res));
 });
 
 // Get all responses belonging to a phrase
 app.post('/response/response/all', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getResponseHandler().getResponses(token, data.botId,
-    data.phraseId,
+  functionHandler.getResponseHandler().getResponses(token, data.phraseId,
     response => res.send(response),
-    error => errorHandler("Error getting responses", error, res));
+    error => errorHandler("Error getting responses.", error, res));
 });
 
 // Add response
@@ -249,7 +245,7 @@ app.post('/response/response/add', (req, res) => {
   functionHandler.getResponseHandler().addResponse(token, data.phraseId,
     data.response,
     response => res.send(response),
-    error => errorHandler("Error adding a response", error, res));
+    error => errorHandler("Error adding response.", error, res));
 });
 
 // Remove response
@@ -257,9 +253,9 @@ app.post('/response/response/remove', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
   functionHandler.getResponseHandler().removeResponse(token, data.phraseId,
-    data.response,
+    data.responseId,
     response => res.send(response),
-    error => errorHandler("Error removing a response", error, res));
+    error => errorHandler("Error removing response.", error, res));
 });
 
 // Start express server

@@ -1,5 +1,6 @@
 import fetch from "isomorphic-fetch";
 import ENV_VARS from "../util/ENV_VARS";
+import logger from "../util/logger";
 
 export default class {
   login(query, success, error) {
@@ -32,11 +33,12 @@ export default class {
           try {
             return bodyFunc();
           } catch (e) {
+            logger.error("Error executing body function.");
             let error = {
               file: "graphcoolClient.js",
               method: "_safeQuery",
               code: 500,
-              error: e,
+              error: e.message,
               message: "Error with graph QL query."
             };
 
@@ -51,11 +53,12 @@ export default class {
               try {
                 successFunc(json);
               } catch (e) {
+                logger.error("Error executing success function.");
                 let error = {
                   file: "graphcoolClient.js",
                   method: "_safeQuery",
                   code: 500,
-                  error: e,
+                  error: e.message,
                   message: "Error with graph QL query."
                 };
 
@@ -75,11 +78,12 @@ export default class {
 
                 errorFunc(error);
               } catch (e) {
+                logger.error("Error executing error function.");
                 let error = {
                   file: "graphcoolClient.js",
                   method: "_safeQuery",
                   code: 500,
-                  error: e,
+                  error: e.message,
                   message: "Error with graph QL query."
                 };
 
@@ -88,11 +92,12 @@ export default class {
             });
           }
         } catch (e) {
+          logger.error("Error executing response from server.");
           let error = {
             file: "graphcoolClient.js",
             method: "_safeQuery",
             code: 500,
-            error: e,
+            error: e.message,
             message: "Error with graph QL query."
           };
 
@@ -100,11 +105,12 @@ export default class {
         }
       });
     } catch (e) {
+      logger.error("Error making request to server.");
       let error = {
         file: "graphcoolClient.js",
         method: "_safeQuery",
         code: 500,
-        error: e,
+        error: e.message,
         message: "Error with graph QL query."
       };
 

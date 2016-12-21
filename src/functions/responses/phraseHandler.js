@@ -3,6 +3,7 @@ import logger from "../../util/logger";
 
 export default class {
   constructor(functionHandler, clientsHandler) {
+    this.responseHandler = functionHandler.getResponseHandler();
     this.gcClient = clientsHandler.getGCClient();
   }
 
@@ -67,11 +68,8 @@ export default class {
     };
 
     this.gcClient.query(query, response => {
-      let phrases = [];
-      response.data.Bot.phrases.forEach(phrase =>
-        phrases.push({id: phrase.id, phrase: phrase.phrase}));
       logger.debug("Got all phrases for bot: " + botId);
-      successFunc(JSON.stringify({phrases: phrases}));
+      successFunc(JSON.stringify({phrases: response.data.Bot.phrases}));
     }, error => {
       let errorObj = {
         file: "phraseHandler.js",
@@ -219,7 +217,99 @@ export default class {
     });
   }
 
-  removePhrase(token, botName, phrase, successFunc, errorFunc) {
+  removePhrase(token, phraseId, successFunc, errorFunc) {
+    logger.debug("Preparing to remove phrase: " + phraseId + "..");
+    this._removeResponsesFromPhrase(token, phraseId,
+      response => this._removePhrase(token, phraseId, successFunc, errorFunc),
+      errorFunc);
+  }
 
+  _removeResponsesFromPhrase(token, phraseId, successFunc, errorFunc) {
+    logger.debug("Removing responses from phrase: " + phraseId + "..");
+    let query = {
+      data: `
+        query {
+          Phrase(id: \\"` + phraseId + `\\") {
+            responses {
+              id
+            }
+          }
+        }`,
+      token: token
+    };
+
+    this.gcClient.query(query, responseGc => {
+      let responses = responseGc.data.Phrase.responses;
+
+      responses = responses.map(response => {
+        const context = this;
+        return new Promise((resolve, reject) =>
+          context.responseHandler.removeResponse(token, phraseId, response.id,
+            serverResponse => {
+              if (JSON.parse(serverResponse).removed) {
+                resolve(serverResponse);
+              } else {
+                reject(serverResponse);
+              }
+            }, reject));
+      });
+
+      Promise.all(responses)
+        .then(result => successFunc(result))
+        .catch(error => {
+          let errorObj = {
+            file: "phraseHandler.js",
+            method: "removeResponsesFromPhrase",
+            code: 500,
+            error: error,
+            message: "Unable to remove one more responses from phrase: " +
+              phraseId + "."
+          };
+
+          return errorFunc(errorObj);
+        });
+    }, error => {
+      let errorObj = {
+        file: "phraseHandler.js",
+        method: "removePhrase",
+        code: 500,
+        error: error,
+        message: "Unable to remove phrase: " + phraseId + "."
+      };
+
+      return errorFunc(errorObj);
+    });
+  }
+
+  _removePhrase(token, phraseId, successFunc, errorFunc) {
+    let query = {
+      data: `
+          mutation {
+            deletePhrase(id: \\"` + phraseId + `\\") {
+              id
+            }
+          }`,
+      token: token
+    };
+
+    this.gcClient.query(query, response => {
+      if (response.data.deletePhrase === null) {
+        logger.warn("Did not remove phrase.");
+        successFunc(JSON.stringify({removed: false}));
+      } else {
+        logger.debug("Removed phrase.");
+        successFunc(JSON.stringify({removed: true}));
+      }
+    }, error => {
+      let errorObj = {
+        file: "phraseHandler.js",
+        method: "_removePhrase",
+        code: 500,
+        error: error,
+        message: "Unable to remove phrase: " + phraseId + "."
+      };
+
+      return errorFunc(errorObj);
+    });
   }
 }
