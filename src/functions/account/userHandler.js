@@ -111,7 +111,7 @@ export default class {
       logger.debug("User account created successfully.");
       this.functionHandler.getActivationHandler().sendActivationRequest(email,
         response.data.createUser.id, firstName, successFunc, errorFunc);
-      successFunc(response);
+      successFunc(JSON.stringify({created: true}));
     }, error => {
       let errorObj = {
         file: "userHandler.js",

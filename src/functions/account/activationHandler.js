@@ -12,7 +12,8 @@ export default class {
     logger.debug("Sending activation request to " + email + "..");
 
     let activationCode = this._generateActivationCode();
-    let activationLink = ENV_VARS.BASE_URL + '/activate?code=' + activationCode;
+    let activationLink = ENV_VARS.BASE_URL + '/account/activate?code='
+      + activationCode;
     let vars = [firstName, activationLink];
     this._sendWelcomeMail(email, vars,
       () => this._saveActivationCode(userId, activationCode, successFunc,
