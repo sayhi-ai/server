@@ -1,3 +1,4 @@
 module.exports = {
-  "extends": "google"
+  "extends": "google",
+  "max-len": [2, 120, 4, {"ignoreUrls": true}]
 };

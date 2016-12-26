@@ -18,19 +18,25 @@ const CONSTANTS = {
   SERVER_LOG_FILE: "./log/server/server.log"
 };
 
+const GC_ERRORS = {
+  USER_EXISTS: 3023
+};
+
 if (process.env.NODE_ENV === "production") {
   ENV_VARS = {
     ROOT: "build",
     BASE_URL: "https://api.sayhi.ai",
     CLIENT_URL: "https://dashboard.sayhi.ai",
-    CONSTANTS: CONSTANTS
+    CONSTANTS: CONSTANTS,
+    GC_ERRORS: GC_ERRORS
   };
 } else {
   ENV_VARS = {
     ROOT: "dev",
     BASE_URL: "http://localhost:8080",
     CLIENT_URL: "http://localhost:4000",
-    CONSTANTS: CONSTANTS
+    CONSTANTS: CONSTANTS,
+    GC_ERRORS: GC_ERRORS
   };
 }
 

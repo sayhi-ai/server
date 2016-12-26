@@ -81,47 +81,54 @@ export default class {
     });
   }
 
-  addUser(firstName, lastName, email, password, successFunc, errorFunc) {
+  addUser(firstName, lastName, email, password) {
     logger.debug("Creating a new user account..");
     let time = new Date().getTime();
     let date = new Date(time);
     let dateISO = date.toISOString();
 
-    let query = {
-      data: `
-        mutation {
-          createUser(
-            authProvider: {
-              email: {
-                email: \\"` + email + `\\",
-                password: \\"` + password + `\\",
-              }
-            },
-            firstName: \\"` + firstName + `\\",
-            lastName: \\"` + lastName + `\\",
-            joined: \\"` + dateISO + `\\",
-          ) {
-            id
-          }
-        }`,
-      token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
-    };
-
-    this.gcClient.query(query, response => {
-      logger.debug("User account created successfully.");
-      this.functionHandler.getActivationHandler().sendActivationRequest(email,
-        response.data.createUser.id, firstName, successFunc, errorFunc);
-      successFunc(JSON.stringify({created: true}));
-    }, error => {
-      let errorObj = {
-        file: "userHandler.js",
-        method: "addUser",
-        code: 400,
-        error: error,
-        message: "Error creating a new account."
+    return new Promise((resolve, reject) => {
+      let query = {
+        data: `
+          mutation {
+            createUser(
+              authProvider: {
+                email: {
+                  email: \\"` + email + `\\",
+                  password: \\"` + password + `\\",
+                }
+              },
+              firstName: \\"` + firstName + `\\",
+              lastName: \\"` + lastName + `\\",
+              joined: \\"` + dateISO + `\\",
+            ) {
+              id
+            }
+          }`,
+        token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
       };
 
-      errorFunc(errorObj);
+      this.gcClient.query(query, response => {
+        if (response.data.createUser !== null) {
+          logger.debug("User account created successfully.");
+          this.functionHandler.getActivationHandler().sendActivationRequest(email, response.data.createUser.id,
+            firstName);
+          return resolve(JSON.stringify({created: true}));
+        } else if (response.errors[0].code === ENV_VARS.GC_ERRORS.USER_EXISTS) {
+          logger.debug("Account not created - e-mail already taken.");
+          return resolve(JSON.stringify({created: false, message: "User with that e-mail already exists."}));
+        }
+      }, error => {
+        let errorObj = {
+          file: "userHandler.js",
+          method: "addUser",
+          code: 400,
+          error: error,
+          message: "Error creating a new account."
+        };
+
+        return reject(errorObj);
+      });
     });
   }
 }

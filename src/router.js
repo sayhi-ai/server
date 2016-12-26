@@ -54,7 +54,7 @@ app.use(function(req, res, next) {
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With,' +
     ' Content-Type, Accept, Authorization');
   if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
+    return res.sendStatus(200);
   } else {
     next();
   }
@@ -110,8 +110,8 @@ app.post('/login', (req, res) => {
 
 // Link account with auth0
 app.post('/account/link', (req, res) => {
-  let token = extractAuthToken(req);
-  let data = req.body;
+  const token = extractAuthToken(req);
+  const data = req.body;
   functionHandler.getUserHandler().linkAccountAuth0(data.firstName,
     data.lastName, token,
     response => res.send(response),
@@ -120,11 +120,10 @@ app.post('/account/link', (req, res) => {
 
 // Create an account
 app.post('/account/create', (req, res) => {
-  let data = req.body;
-  functionHandler.getUserHandler().addUser(data.firstName, data.lastName,
-    data.email, data.password,
-    response => res.send(response),
-    error => errorHandler("Error creating an account", error, res));
+  const data = req.body;
+  functionHandler.getUserHandler().addUser(data.firstName, data.lastName, data.email, data.password)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error creating an account", error, res));
 });
 
 // Change password

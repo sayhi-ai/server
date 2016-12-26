@@ -4,7 +4,7 @@ import logger from "../util/logger";
 
 export default class {
   constructor() {
-    let smtpConfig = {
+    const smtpConfig = {
       host: 'smtp.zoho.com',
       port: 465,
       secure: true, // use SSL
@@ -17,32 +17,34 @@ export default class {
     this.transporter = nodemailer.createTransport(smtpConfig);
   }
 
-  sendMail(recipient, subject, content, successFunc, errorFunc) {
+  sendMail(recipient, subject, content) {
     logger.debug("Sending mail to: " + recipient +
       " on subject: " + subject + "..");
-    var mailOptions = {
+    const mailOptions = {
       from: '"sayHi.ai" <info@sayhi.ai>',
       to: recipient,
       subject: subject,
       html: content
     };
 
-    this.transporter.sendMail(mailOptions, function(error, response) {
-      if (error) {
-        let errorObj = {
-          file: "mailClient.js",
-          method: "sendMail",
-          code: 500,
-          error: error,
-          message: "Error with graph QL query."
-        };
+    return new Promise((resolve, reject) => {
+      this.transporter.sendMail(mailOptions, function(error, response) {
+        if (error) {
+          const errorObj = {
+            file: "mailClient.js",
+            method: "sendMail",
+            code: 500,
+            error: error,
+            message: "Error with nodemailer query."
+          };
 
-        errorFunc(errorObj);
-      } else {
-        logger.debug("Mail sent to: " + recipient +
-          " on subject: " + subject + ".");
-        successFunc(response);
-      }
+          // return reject(errorObj);
+          return resolve(errorObj);
+        }
+
+        logger.debug("Mail sent to: " + recipient + " on subject: " + subject + ".");
+        return resolve(response);
+      });
     });
   }
 

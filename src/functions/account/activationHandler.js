@@ -8,16 +8,17 @@ export default class {
     this.mailClient = clientsHandler.getMailClient();
   }
 
-  sendActivationRequest(email, userId, firstName, successFunc, errorFunc) {
+  sendActivationRequest(email, userId, firstName) {
     logger.debug("Sending activation request to " + email + "..");
 
-    let activationCode = this._generateActivationCode();
-    let activationLink = ENV_VARS.BASE_URL + '/account/activate?code='
-      + activationCode;
-    let vars = [firstName, activationLink];
-    this._sendWelcomeMail(email, vars,
-      () => this._saveActivationCode(userId, activationCode, successFunc,
-        errorFunc), errorFunc);
+    const activationCode = this._generateActivationCode();
+    const activationLink = ENV_VARS.BASE_URL + '/account/activate?code=' + activationCode;
+    const vars = [firstName, activationLink];
+
+    return this._sendWelcomeMail(email, vars)
+      .then(response => this._saveActivationCode(userId, activationCode))
+      .then(response => this._linkActivationToUser(userId,
+        response.data.createActivation.id))
   }
 
   activateAccount(code, successFunc, errorFunc) {
@@ -108,13 +109,14 @@ export default class {
     });
   }
 
-  _saveActivationCode(userId, code, successFunc, errorFunc) {
+  _saveActivationCode(userId, code) {
     let time = new Date().getTime();
     let date = new Date(time);
     let dateISO = date.toISOString();
 
-    let query = {
-      data: `
+    return new Promise((resolve, reject) => {
+      let query = {
+        data: `
         mutation {
           createActivation(
             code: \\"` + code + `\\"
@@ -123,29 +125,30 @@ export default class {
             id
           }
         }`,
-      token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
-    };
-
-    this.gcClient.query(query, response => {
-      logger.debug("Activation code saved for user: " + userId + ".");
-      this._linkActivationToUser(userId, response.data.createActivation.id,
-        successFunc, errorFunc);
-    }, error => {
-      let errorObj = {
-        file: "activationHandler.js",
-        method: "_saveActivationCode",
-        code: 500,
-        error: error,
-        message: "Unable to save activation code."
+        token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
       };
 
-      errorFunc(errorObj);
+      this.gcClient.query(query, response => {
+        logger.debug("Activation code saved for user: " + userId + ".");
+        return resolve(response);
+      }, error => {
+        let errorObj = {
+          file: "activationHandler.js",
+          method: "_saveActivationCode",
+          code: 500,
+          error: error,
+          message: "Unable to save activation code."
+        };
+
+        return reject(errorObj);
+      });
     });
   }
 
-  _linkActivationToUser(userId, activationId, successFunc, errorFunc) {
-    let query = {
-      data: `
+  _linkActivationToUser(userId, activationId) {
+    return new Promise((resolve, reject) => {
+      const query = {
+        data: `
         mutation {
           setUserActivationRelation(
             userUserId: \\"` + userId + `\\"
@@ -159,39 +162,45 @@ export default class {
             }
           }
         }`,
-      token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
-    };
-
-    this.gcClient.query(query, response => {
-      logger.debug("Activation code linked with user: " + userId + ".");
-      successFunc(response);
-    }, error => {
-      let errorObj = {
-        file: "activationHandler.js",
-        method: "_linkActivationToUser",
-        code: 500,
-        error: error,
-        message: "Unable to link activation object with user object."
+        token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
       };
 
-      errorFunc(errorObj);
+      this.gcClient.query(query, response => {
+        logger.debug("Activation code linked with user: " + userId + ".");
+        return resolve(response);
+      }, error => {
+        let errorObj = {
+          file: "activationHandler.js",
+          method: "_linkActivationToUser",
+          code: 500,
+          error: error,
+          message: "Unable to link activation object with user object."
+        };
+
+        return reject(errorObj);
+      });
     });
   }
 
-  _sendWelcomeMail(email, vars, successFunc, errorFunc) {
-    fs.readFile(process.cwd() + "/" + ENV_VARS.ROOT +
-      '/welcome-email.html', 'utf8', (error, html) => {
-        if (error) {
-          errorFunc(error);
-        } else {
-          let htmlFinal = this.mailClient.processHTMLString(html, vars);
-          this.mailClient.sendMail(email, "Welcome to sayHi.ai!",
-            htmlFinal, successFunc, errorFunc);
-        }
-      }
-    );
+  _sendWelcomeMail(email, vars) {
+    return new Promise((resolve, reject) => {
+      fs.readFile(process.cwd() + "/" + ENV_VARS.ROOT +
+        '/welcome-email.html', 'utf8', (error, html) => {
+          if (error) {
+            return reject(error);
+          }
 
-    logger.debug("Activation email sent to " + email + ".");
+          const htmlFinal = this.mailClient.processHTMLString(html, vars);
+          return this.mailClient.sendMail(email, "Welcome to sayHi.ai!",
+            htmlFinal)
+            .then(response => {
+              logger.debug("Activation email sent to " + email + ".");
+              return resolve(response);
+            })
+            .catch(error => reject(error));
+        }
+      );
+    });
   }
 
   _generateActivationCode() {
