@@ -102,7 +102,7 @@
     "build:dev:watch": "webpack --progress --config tools/webpack.config.dev.js --watch",
     "server:dev": "nodemon dev/start.js",
     "server:prod": "node build/start.js",
-    "start": "npm-run-all build server:prod",
+    "start": "npm-run-all lint build server:prod",
     "dev": "npm-run-all --parallel build:dev:watch server:dev"
   }
 }
