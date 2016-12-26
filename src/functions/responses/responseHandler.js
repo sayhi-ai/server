@@ -8,16 +8,12 @@ export default class {
 
   getResponses(token, phraseId, successFunc, errorFunc) {
     logger.debug("Getting responses for phrase: " + phraseId + "..");
-    this._getResponses(token, phraseId,
-      response => successFunc(JSON.stringify({responses: response})),
-      errorFunc);
+    this._getResponses(token, phraseId, response => successFunc(JSON.stringify({responses: response})), errorFunc);
   }
 
   getResponse(token, phraseId, successFunc, errorFunc) {
     logger.debug("Getting a response for phrase: " + phraseId + "..");
-    this._getResponses(token, phraseId,
-      response => this._chooseResponse(response, successFunc),
-      errorFunc);
+    this._getResponses(token, phraseId, response => this._chooseResponse(response, successFunc), errorFunc);
   }
 
   _getResponses(token, phraseId, successFunc, errorFunc) {
@@ -90,13 +86,10 @@ export default class {
       let responses = responseQl.data.allResponses;
       if (responses.length === 0) {
         logger.debug("Creating a new response: " + response + "..");
-        this._createNewResponse(token, phraseId, response,
-          successFunc, errorFunc);
+        this._createNewResponse(token, phraseId, response, successFunc, errorFunc);
       } else if (responses.length === 1) {
-        logger.debug("Response exists already, linking response: " +
-          response + " to phrase: " + phraseId + "..");
-        this._linkResponseToPhrase(token, phraseId, responses[0].id,
-          successFunc, errorFunc);
+        logger.debug("Response exists already, linking response: " + response + " to phrase: " + phraseId + "..");
+        this._linkResponseToPhrase(token, phraseId, responses[0].id, successFunc, errorFunc);
       } else {
         let errorObj = {
           file: "responseHandler.js",
@@ -133,10 +126,8 @@ export default class {
     };
 
     this.gcClient.query(query, responseQl => {
-      logger.debug("Response created, linking response: " +
-        response + " to phrase: " + phraseId + "..");
-      this._linkResponseToPhrase(token, phraseId,
-        responseQl.data.createResponse.id, successFunc, errorFunc);
+      logger.debug("Response created, linking response: " + response + " to phrase: " + phraseId + "..");
+      this._linkResponseToPhrase(token, phraseId, responseQl.data.createResponse.id, successFunc, errorFunc);
     }, error => {
       let errorObj = {
         file: "responseHandler.js",
@@ -171,14 +162,11 @@ export default class {
 
     this.gcClient.query(query, response => {
       if (response.data.addToPhraseResponseRelation === null) {
-        logger.warn("Did not link response because a connection already " +
-          "exists between phrase and response.");
+        logger.warn("Did not link response because a connection already exists between phrase and response.");
         successFunc(JSON.stringify({added: false}));
       } else {
-        let responseId = response.data.addToPhraseResponseRelation.
-          responsesResponse.id;
-        logger.debug("Linked response: " + responseId + " with phrase: " +
-          phraseId + " successfully.");
+        let responseId = response.data.addToPhraseResponseRelation.responsesResponse.id;
+        logger.debug("Linked response: " + responseId + " with phrase: " + phraseId + " successfully.");
         successFunc(JSON.stringify({added: true, id: responseId}));
       }
     }, error => {
@@ -187,8 +175,7 @@ export default class {
         method: "_linkResponseToPhrase",
         code: 400,
         error: error,
-        message: "Unable to link response: " + responseId + " to phrase: " +
-          phraseId + "."
+        message: "Unable to link response: " + responseId + " to phrase: " + phraseId + "."
       };
 
       return errorFunc(errorObj);
@@ -216,8 +203,7 @@ export default class {
         this._removeResponse(token, responseId, successFunc, errorFunc);
       } else {
         logger.debug("Response found to unlink from phrase.");
-        this._unlinkResponse(token, phraseId, responseId, successFunc,
-          errorFunc);
+        this._unlinkResponse(token, phraseId, responseId, successFunc, errorFunc);
       }
     }, error => {
       let errorObj = {
@@ -225,8 +211,7 @@ export default class {
         method: "removeResponse",
         code: 400,
         error: error,
-        message: "Unable to find response to remove for phrase: " + phraseId +
-         "."
+        message: "Unable to find response to remove for phrase: " + phraseId + "."
       };
 
       return errorFunc(errorObj);
@@ -276,11 +261,11 @@ export default class {
   _removeResponse(token, responseId, successFunc, errorFunc) {
     let query = {
       data: `
-          mutation {
-            deleteResponse(id: \\"` + responseId + `\\") {
-              id
-            }
-          }`,
+        mutation {
+          deleteResponse(id: \\"` + responseId + `\\") {
+            id
+          }
+        }`,
       token: token
     };
 

@@ -30,13 +30,14 @@ logger.info("Server environment set up successfully.");
 
 // Set up HTTP request logging
 logger.info("Setting up HTTP logging..");
-// noinspection Eslint
+
 const accessLogStream = FileStreamRotator.getStream({
-  date_format: 'YYYYMMDD',
+  date_format: 'YYYYMMDD', // eslint-disable-line
   filename: path.join(ENV_VARS.CONSTANTS.HTTP_LOG_DIR, 'access-%DATE%.log'),
   frequency: 'daily',
   verbose: false
 });
+
 logger.info("HTTP logging set up successfully.");
 
 // Set up express server
@@ -55,9 +56,9 @@ app.use(function(req, res, next) {
     ' Content-Type, Accept, Authorization');
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
-  } else {
-    next();
   }
+
+  next();
 });
 logger.info("Express server set up successfully.");
 

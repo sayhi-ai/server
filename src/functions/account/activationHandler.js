@@ -17,8 +17,7 @@ export default class {
 
     return this._sendWelcomeMail(email, vars)
       .then(response => this._saveActivationCode(userId, activationCode))
-      .then(response => this._linkActivationToUser(userId,
-        response.data.createActivation.id))
+      .then(response => this._linkActivationToUser(userId, response.data.createActivation.id));
   }
 
   activateAccount(code, successFunc, errorFunc) {
