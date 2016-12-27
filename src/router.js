@@ -162,29 +162,27 @@ app.post('/account/unsubscribe', (req, res) => {
 // Get all bots a user has
 app.post('/response/bot/all', (req, res) => {
   let token = extractAuthToken(req);
-  functionHandler.getBotHandler().getBotId(token,
-    response => res.send(response),
-    error => errorHandler("Error getting bots.", error, res));
+  functionHandler.getBotHandler().getBotId(token)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error getting bots.", error, res));
 });
 
 // Add a bot
 app.post('/response/bot/add', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getBotHandler().addBot(token,
-    data.name, data.type, data.description,
-    response => res.send(response),
-    error => errorHandler("Error adding bot.", error, res));
+  functionHandler.getBotHandler().addBot(token, data.name, data.type, data.description)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error adding bot.", error, res));
 });
 
 // Remove a bot
 app.post('/response/bot/remove', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getBotHandler().removeBot(token,
-    data.botId,
-    response => res.send(response),
-    error => errorHandler("Error removing bot.", error, res));
+  functionHandler.getBotHandler().removeBot(token, data.botId)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error removing bot.", error, res));
 });
 
 /* ----------------------------------------------------------------------------
