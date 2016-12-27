@@ -1,8 +1,13 @@
 import fetch from "isomorphic-fetch";
 import ENV_VARS from "../util/ENV_VARS";
 import logger from "../util/logger";
+import _errorHandler from "../util/errorHandler";
 
 export default class {
+  constructor() {
+    this._errorHandler = new _errorHandler("graphcoolClient.js");
+  }
+  
   login(query) {
     return this._safeQuery(ENV_VARS.CONSTANTS.GRAPHCOOL_URL,
       "POST", {
@@ -31,15 +36,7 @@ export default class {
               return bodyFunc();
             } catch (e) {
               logger.error("Error executing body function.");
-              let error = {
-                file: "graphcoolClient.js",
-                method: "_safeQuery",
-                code: 500,
-                error: e.message,
-                message: "Error with graph QL query."
-              };
-
-              return reject(error);
+              return reject(this._errorHandler.create("_safeQuery", 500, e.message, "Error with graph QL query."));
             }
           })()
         })
@@ -51,67 +48,28 @@ export default class {
                     return resolve(json);
                   } catch (e) {
                     logger.error("Error executing success function.");
-                    let error = {
-                      file: "graphcoolClient.js",
-                      method: "_safeQuery",
-                      code: 500,
-                      error: e.message,
-                      message: "Error with graph QL query."
-                    };
-
-                    return reject(error);
+                    return reject(this._errorHandler.create("_safeQuery", 500, e.message, "Error with graph QL query."));
                   }
                 });
               } else {
                 response.json().then(json => {
                   try {
-                    let error = {
-                      file: "graphcoolClient.js",
-                      method: "_safeQuery",
-                      code: 500,
-                      error: json,
-                      message: "Error with graph QL query."
-                    };
-
-                    return reject(error);
+                    logger.error("No 200 response received from GQ server.");
+                    return reject(this._errorHandler.create("_safeQuery", 500, json, "Error with graph QL query."));
                   } catch (e) {
                     logger.error("Error executing error function.");
-                    let error = {
-                      file: "graphcoolClient.js",
-                      method: "_safeQuery",
-                      code: 500,
-                      error: e.message,
-                      message: "Error with graph QL query."
-                    };
-
-                    return reject(error);
+                    return reject(this._errorHandler.create("_safeQuery", 500, e.message, "Error with graph QL query."));
                   }
                 });
               }
             } catch (e) {
               logger.error("Error executing response from server.");
-              let error = {
-                file: "graphcoolClient.js",
-                method: "_safeQuery",
-                code: 500,
-                error: e.message,
-                message: "Error with graph QL query."
-              };
-
-              return reject(error);
+              return reject(this._errorHandler.create("_safeQuery", 500, e.message, "Error with graph QL query."));
             }
           });
       } catch (e) {
         logger.error("Error making request to server.");
-        let error = {
-          file: "graphcoolClient.js",
-          method: "_safeQuery",
-          code: 500,
-          error: e.message,
-          message: "Error with graph QL query."
-        };
-
-        return reject(error);
+        return reject(this._errorHandler.create("_safeQuery", 500, e.message, "Error with graph QL query."));
       }
     });
   }

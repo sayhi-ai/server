@@ -1,10 +1,12 @@
 import ENV_VARS from "../../util/ENV_VARS";
 import logger from "../../util/logger";
+import ErrorHandler from "../../util/errorHandler";
 
 export default class {
   constructor(functionHandler, clientsHandler) {
-    this.gcClient = clientsHandler.getGCClient();
-    this.functionHandler = functionHandler;
+    this._gcClient = clientsHandler.getGCClient();
+    this._functionHandler = functionHandler;
+    this._errorHandler = new ErrorHandler("userHandler.js");
   }
 
   login(email, password) {
@@ -28,14 +30,14 @@ export default class {
     };
 
     return new Promise((resolve, reject) => {
-      return this.gcClient.login(query)
+      return this._gcClient.login(query)
         .then(response => {
           logger.debug("Login successful.");
 
           const token = response.data.signinUser.token;
           return resolve(JSON.stringify({token: token}));
         })
-        .catch(error => reject(this._createErrorObject("login", 401, error, "Username or password is incorrect.")));
+        .catch(error => reject(this._errorHandler.create("login", 401, error, "Username or password is incorrect.")));
     });
   }
 
@@ -59,7 +61,7 @@ export default class {
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    this.gcClient.query(query, response => {
+    this._gcClient.query(query, response => {
       logger.debug("Auth0 account link successful.");
       successFunc(response);
     }, error => {
@@ -102,11 +104,11 @@ export default class {
     };
 
     return new Promise((resolve, reject) => {
-      this.gcClient.query(query)
+      this._gcClient.query(query)
         .then(response => {
           if (response.data.createUser !== null) {
             logger.debug("User account created successfully.");
-            this.functionHandler.getActivationHandler().sendActivationRequest(email,
+            this._functionHandler.getActivationHandler().sendActivationRequest(email,
               response.data.createUser.id, firstName);
             return resolve(JSON.stringify({created: true}));
           } else if (response.errors[0].code === ENV_VARS.GC_ERRORS.USER_EXISTS) {
@@ -114,17 +116,7 @@ export default class {
             return resolve(JSON.stringify({created: false, message: "User with that e-mail already exists."}));
           }
         })
-        .catch(error => reject(this._createErrorObject("addUser", 400, error, "Error creating a new account.")));
+        .catch(error => reject(this._errorHandler.create("addUser", 400, error, "Error creating a new account.")));
     });
-  }
-
-  _createErrorObject(method, code, error, message) {
-    return {
-      file: "userHandler.js",
-      method: method,
-      code: code,
-      error: error,
-      message: message
-    };
   }
 }

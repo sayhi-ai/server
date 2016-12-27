@@ -3,7 +3,7 @@ import winston from 'winston';
 require('winston-daily-rotate-file');
 winston.emitErrs = true;
 
-var transport = new winston.transports.DailyRotateFile({
+const transport = new winston.transports.DailyRotateFile({
   filename: ENV_VARS.CONSTANTS.SERVER_LOG_FILE,
   datePattern: 'yyyy-MM-dd.',
   prepend: true,
@@ -19,7 +19,7 @@ const transports = [
   })
 ];
 
-var logger = new winston.Logger({
+const logger = new winston.Logger({
   transports: transports,
   exitOnError: false
 });

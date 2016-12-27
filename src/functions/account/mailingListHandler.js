@@ -1,14 +1,16 @@
 import ENV_VARS from "../../util/ENV_VARS";
 import logger from "../../util/logger";
+import ErrorHandler from "../../util/errorHandler";
 
 export default class {
   constructor(functionHandler, clientsHandler) {
-    this.gcClient = clientsHandler.getGCClient();
+    this._gcClient = clientsHandler.getGCClient();
+    this._errorHandler = new ErrorHandler("mailingListHandler.js");
   }
 
-  addToMailingList(email, successFunc, errorFunc) {
+  addToMailingList(email) {
     logger.debug("Adding user: " + email + " to mailing list..");
-    let query = {
+    const query = {
       data: `
         query {
           User(email: \\"` + email + `\\") {
@@ -18,56 +20,44 @@ export default class {
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    this.gcClient.query(query, response => {
-      let user = response.data.User;
-      this._createMailingListEntry(email, user, successFunc, errorFunc);
-    }, error => {
-      let errorObj = {
-        file: "mailingListHandler.js",
-        method: "addToMailingList",
-        code: 400,
-        error: error,
-        message: "Unable to add account to mailing list. Maybe wrong user " +
-          "credentials?"
-      };
-
-      errorFunc(errorObj);
+    return new Promise((resolve, reject) => {
+      return this._gcClient.query(query)
+        .then(response => this._createMailingListEntry(email, response.data.User))
+        .then(response => resolve(response))
+        .catch(error => reject(this._errorHandler.create("addToMailingList", 400, error, "Unable to add account to" +
+          "mailing list. Maybe wrong user credentials?")));
     });
   }
 
-  removeFromMailingList(email, successFunc, errorFunc) {
+  removeFromMailingList(email) {
     logger.info("Removing user: " + email + " from mailing list..");
-    this._getMailingListId(email, response => {
-      let query = {
-        data: `
-          mutation {
-            deleteMailingList(id: \\"` + response.data.MailingList.id + `\\") {
-              id
-            }
-          }`,
-        token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
-      };
 
-      this.gcClient.query(query, response => {
-        logger.info("Removed user: " + email + " from mailing list.");
-        successFunc(response);
-      }, error => {
-        let errorObj = {
-          file: "mailingListHandler.js",
-          method: "removeFromMailingList",
-          code: 400,
-          error: error,
-          message: "Unable to remove account from mailing list. Maybe wrong" +
-            "user credentials?"
-        };
+    return new Promise((resolve, reject) => {
+      this._getMailingListId(email)
+        .then(response => {
+          const query = {
+            data: `
+              mutation {
+                deleteMailingList(id: \\"` + response.data.MailingList.id + `\\") {
+                  id
+                }
+              }`,
+            token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
+          };
 
-        errorFunc(errorObj);
-      });
-    }, errorFunc);
+          return this._gcClient.query(query)
+        })
+        .then(response => {
+          logger.info("Removed user: " + email + " from mailing list.");
+          return resolve(response);
+        })
+        .catch(error => reject(this._errorHandler.create("removeFromMailingList", 400, error, "Unable to remove" +
+          "account from mailing list. Maybe wrong user credentials?")));
+    });
   }
 
-  _getMailingListId(email, successFunc, errorFunc) {
-    let query = {
+  _getMailingListId(email) {
+    const query = {
       data: `
         query {
           MailingList(email: \\"` + email + `\\") {
@@ -77,23 +67,16 @@ export default class {
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    this.gcClient.query(query, response => {
-      successFunc(response);
-    }, error => {
-      let errorObj = {
-        file: "mailingListHandler.js",
-        method: "_getMailingListId",
-        code: 500,
-        error: error,
-        message: "Unable to get mailing list id."
-      };
-
-      errorFunc(errorObj);
-    });
+    return new Promise((resolve, reject) => {
+      return this._gcClient.query(query)
+        .then(response => resolve(response))
+        .catch(error => reject(this._errorHandler.create("_getMailingListId", 400, error, "Unable to get mailing list" +
+          "id.")));
+      });
   }
 
-  _createMailingListEntry(email, user, successFunc, errorFunc) {
-    let query = {
+  _createMailingListEntry(email, user) {
+    const query = {
       data: `
         mutation {
           createMailingList(email: \\"` + email + `\\") {
@@ -103,30 +86,26 @@ export default class {
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    this.gcClient.query(query, response => {
-      if (user === null) {
-        logger.info("Added user: " + user + " to mailing list.");
-        successFunc(response);
-      } else {
-        let mailingListId = response.data.createMailingList.id;
-        this._connectUserMailingList(user.id, mailingListId,
-          successFunc, errorFunc);
-      }
-    }, error => {
-      let errorObj = {
-        file: "mailingListHandler.js",
-        method: "_createMailingListEntry",
-        code: 500,
-        error: error,
-        message: "Unable to create mailing list entry."
-      };
-
-      errorFunc(errorObj);
+    return new Promise((resolve, reject) => {
+      return this._gcClient.query(query)
+        .then(response => {
+          if (user === null) {
+            logger.info("Added user: " + user + " to mailing list.");
+            return resolve(response);
+          } else {
+            const mailingListId = response.data.createMailingList.id;
+            return this._linkUserToMailingList(user.id, mailingListId)
+              .then(response => resolve(response))
+              .catch(error => reject(error));
+          }
+        })
+        .catch(error => reject(this._errorHandler.create("_createMailingListEntry", 400, error, "Unable to create " +
+          "mailing list entry.")));
     });
   }
 
-  _connectUserMailingList(userID, mailingListID, successFunc, errorFunc) {
-    let query = {
+  _linkUserToMailingList(userID, mailingListID) {
+    const query = {
       data: `
         mutation {
           setUserMailRelation(
@@ -143,19 +122,14 @@ export default class {
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    this.gcClient.query(query, response => {
-      logger.info("Added user: " + userID + " to mailing list.");
-      successFunc(response);
-    }, error => {
-      let errorObj = {
-        file: "mailingListHandler.js",
-        method: "_connectUserMailingList",
-        code: 500,
-        error: error,
-        message: "Unable to link user to mailing list."
-      };
-
-      errorFunc(errorObj);
+    return new Promise((resolve, reject) => {
+      return this._gcClient.query(query)
+        .then(response => {
+          logger.info("Added user: " + userID + " to mailing list.");
+          return resolve(response);
+        })
+        .catch(error => reject(this._errorHandler.create("_linkUserToMailingList", 500, error, "Unable to link user " +
+          "to mailing list.")));
     });
   }
 }

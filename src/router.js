@@ -11,6 +11,11 @@ import ENV_VARS from "./util/ENV_VARS";
 import logger from "./util/logger";
 const path = require('path');
 
+/* ----------------------------------------------------------------------------
+ * Set up
+ * ----------------------------------------------------------------------------
+ */
+
 // Set up environment
 logger.info("Setting up server environment..");
 if (!fs.existsSync(ENV_VARS.CONSTANTS.BASE_LOG_DIR)) {
@@ -72,7 +77,7 @@ const errorHandler = (error, errorObj, res) => {
     " MESSAGE: " + error + " - " + errorObj.message +
     " DATA: " + JSON.stringify({errorData: errorObj.error})
   );
-  return res.status(errorObj.code).send(JSON.stringify({
+  return res.status(errorObj.httpRes).send(JSON.stringify({
     error: error,
     detail: errorObj.message
   }));
@@ -111,9 +116,9 @@ app.post('/login', (req, res) => {
 app.post('/account/link', (req, res) => {
   const token = extractAuthToken(req);
   const data = req.body;
-  functionHandler.getUserHandler().linkAccountAuth0(data.firstName, data.lastName, token,
-    response => res.send(response),
-    error => errorHandler("Error creating an account", error, res));
+  functionHandler.getUserHandler().linkAccountAuth0(data.firstName, data.lastName, token)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error creating an account", error, res));
 });
 
 // Create an account
@@ -132,17 +137,17 @@ app.post('/account/changepassword', (req, res) => {
 // Add email to mailing list
 app.post('/account/subscribe', (req, res) => {
   let data = req.body;
-  functionHandler.getMailingListHandler().addToMailingList(data.email,
-    response => res.send(response),
-    error => errorHandler("Error subscribing to mailing list", error, res));
+  functionHandler.getMailingListHandler().addToMailingList(data.email)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error subscribing to mailing list", error, res));
 });
 
 // Remove email from mailing list
 app.post('/account/unsubscribe', (req, res) => {
   let data = req.body;
-  functionHandler.getMailingListHandler().removeFromMailingList(data.email,
-    response => res.send(response),
-    error => errorHandler("Error unsubscribing from mailing list", error, res));
+  functionHandler.getMailingListHandler().removeFromMailingList(data.email)
+    .then(response => res.send(response))
+    .then(error => errorHandler("Error unsubscribing from mailing list", error, res));
 });
 
 /* ----------------------------------------------------------------------------
@@ -254,6 +259,11 @@ app.post('/response/response/remove', (req, res) => {
     response => res.send(response),
     error => errorHandler("Error removing response.", error, res));
 });
+
+/* ----------------------------------------------------------------------------
+ * Server
+ * ----------------------------------------------------------------------------
+ */
 
 // Start express server
 logger.info("Starting server..");

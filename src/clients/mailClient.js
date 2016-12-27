@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import ENV_VARS from "../util/ENV_VARS";
 import logger from "../util/logger";
+import ErrorHandler from "../util/errorHandler";
 
 export default class {
   constructor() {
@@ -14,12 +15,12 @@ export default class {
       }
     };
 
-    this.transporter = nodemailer.createTransport(smtpConfig);
+    this._transporter = nodemailer.createTransport(smtpConfig);
+    this._errorHandler = new ErrorHandler("mailClient.js");
   }
 
   sendMail(recipient, subject, content) {
-    logger.debug("Sending mail to: " + recipient +
-      " on subject: " + subject + "..");
+    logger.debug("Sending mail to: " + recipient + " on subject: " + subject + "..");
     const mailOptions = {
       from: '"sayHi.ai" <info@sayhi.ai>',
       to: recipient,
@@ -29,9 +30,9 @@ export default class {
 
     return new Promise((resolve, reject) => {
       const context = this;
-      this.transporter.sendMail(mailOptions, function(error, response) {
+      this._transporter.sendMail(mailOptions, function(error, response) {
         if (error) {
-          return reject(context._createErrorObject("sendMail", 500, error, "Error with nodemailer."));
+          return reject(context._errorHandler.create("sendMail", 500, error, "Error with nodemailer."));
         }
 
         logger.debug("Mail sent to: " + recipient + " on subject: " + subject + ".");
@@ -47,15 +48,5 @@ export default class {
     }
 
     return finalHtml;
-  }
-
-  _createErrorObject(method, code, error, message) {
-    return {
-      file: "activationHandler.js",
-      method: method,
-      code: code,
-      error: error,
-      message: message
-    };
   }
 }

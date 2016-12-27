@@ -1,11 +1,13 @@
 import fs from 'fs';
 import ENV_VARS from "../../util/ENV_VARS";
 import logger from "../../util/logger";
+import ErrorHandler from "../../util/errorHandler";
 
 export default class {
   constructor(functionHandler, clientsHandler) {
-    this.gcClient = clientsHandler.getGCClient();
-    this.mailClient = clientsHandler.getMailClient();
+    this._gcClient = clientsHandler.getGCClient();
+    this._mailClient = clientsHandler.getMailClient();
+    this._errorHandler = new ErrorHandler("activationHandler.js");
   }
 
   sendActivationRequest(email, userId, firstName) {
@@ -18,7 +20,7 @@ export default class {
     return this._sendWelcomeMail(email, vars)
       .then(response => this._saveActivationCode(userId, activationCode))
       .then(response => this._linkActivationToUser(userId, response.data.createActivation.id))
-      .catch(error => logger.error(this._createErrorObject("sendActivationRequest", 500, error,
+      .catch(error => logger.error(this._errorHandler.create("sendActivationRequest", 500, error,
         "Unable to create activatio request for user:  " + email)));
   }
 
@@ -39,11 +41,11 @@ export default class {
     };
 
     return new Promise((resolve, reject) => {
-      this.gcClient.query(query)
+      this._gcClient.query(query)
         .then(response => this._updateAccountStatus(response.data.Activation))
         .then(id =>  this._deleteActivationObject(id))
         .then(response => resolve(response))
-        .catch(error => reject(this._createErrorObject("activateAccount", 500, error,
+        .catch(error => reject(this._errorHandler.create("activateAccount", 500, error,
           "Unable to activate account. Wrong or old link maybe?")));
     });
   }
@@ -61,12 +63,12 @@ export default class {
 
     return new Promise((resolve, reject) => {
       const id = activationObj.id;
-      return this.gcClient.query(query)
+      return this._gcClient.query(query)
         .then(response => {
           logger.debug("Account status updated to AUTH for user: " + id);
           return resolve(id);
         })
-        .catch(error => reject(this._createErrorObject("_updateAccountStatus", 500, error,
+        .catch(error => reject(this._errorHandler.create("_updateAccountStatus", 500, error,
           "Unable to update account status.")));
     });
   }
@@ -85,12 +87,12 @@ export default class {
 
 
     return new Promise((resolve, reject) => {
-      return this.gcClient.query(query)
+      return this._gcClient.query(query)
         .then(response => {
           logger.debug("Activation object deleted.");
           return resolve(response);
         })
-        .catch(error => reject(this._createErrorObject("_deleteActivationObject", 500, error,
+        .catch(error => reject(this._errorHandler.create("_deleteActivationObject", 500, error,
           "Unable to delete activation object.")));
     });
   }
@@ -114,12 +116,12 @@ export default class {
     };
 
     return new Promise((resolve, reject) => {
-      return this.gcClient.query(query)
+      return this._gcClient.query(query)
         .then(response => {
           logger.debug("Activation code saved for user: " + userId + ".");
           return resolve(response);
         })
-        .catch(error => reject(this._createErrorObject("_saveActivationCode", 500, error,
+        .catch(error => reject(this._errorHandler.create("_saveActivationCode", 500, error,
           "Unable to save activation code.")));
     });
   }
@@ -144,12 +146,12 @@ export default class {
     };
 
     return new Promise((resolve, reject) => {
-      return this.gcClient.query(query)
+      return this._gcClient.query(query)
         .then(response => {
           logger.debug("Activation code linked with user: " + userId + ".");
           return resolve(response);
         })
-        .catch(error => reject(this._createErrorObject("_linkActivationToUser", 500, error,
+        .catch(error => reject(this._errorHandler.create("_linkActivationToUser", 500, error,
           "Unable to link activation object with user object.")));
     });
   }
@@ -161,8 +163,8 @@ export default class {
             return reject(error);
           }
 
-          const htmlFinal = this.mailClient.processHTMLString(html, vars);
-          return this.mailClient.sendMail(email, "Welcome to sayHi.ai!", htmlFinal)
+          const htmlFinal = this._mailClient.processHTMLString(html, vars);
+          return this._mailClient.sendMail(email, "Welcome to sayHi.ai!", htmlFinal)
             .then(response => {
               logger.debug("Activation email sent to " + email + ".");
               return resolve(response);
@@ -175,23 +177,12 @@ export default class {
 
   _generateActivationCode() {
     let code = "";
-    let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123" +
-      "456789";
+    let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
     for (let i = 0; i < 60; i++) {
       code += possible.charAt(Math.floor(Math.random() * possible.length));
     }
 
     return code;
-  }
-
-  _createErrorObject(method, code, error, message) {
-    return {
-      file: "activationHandler.js",
-      method: method,
-      code: code,
-      error: error,
-      message: message
-    };
   }
 }
