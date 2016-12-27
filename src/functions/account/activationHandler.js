@@ -17,13 +17,15 @@ export default class {
 
     return this._sendWelcomeMail(email, vars)
       .then(response => this._saveActivationCode(userId, activationCode))
-      .then(response => this._linkActivationToUser(userId, response.data.createActivation.id));
+      .then(response => this._linkActivationToUser(userId, response.data.createActivation.id))
+      .catch(error => logger.error(this._createErrorObject("sendActivationRequest", 500, error,
+        "Unable to create activatio request for user:  " + email)));
   }
 
-  activateAccount(code, successFunc, errorFunc) {
+  activateAccount(code) {
     logger.debug("Request to activate account received.");
 
-    let query = {
+    const query = {
       data: `
         query {
           Activation(code: \\"` + code + `\\") {
@@ -36,53 +38,42 @@ export default class {
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    this.gcClient.query(query, response => {
-      this._updateAccountStatus(response.data.Activation.user.id,
-        () => this._deleteActivationObject(response.data.Activation.id,
-          successFunc, errorFunc),
-        errorFunc);
-    }, error => {
-      let errorObj = {
-        file: "activationHandler.js",
-        method: "activateAccount",
-        code: 400,
-        error: error,
-        message: "Unable to activate account. Wrong or old link maybe?"
-      };
-
-      errorFunc(errorObj);
+    return new Promise((resolve, reject) => {
+      this.gcClient.query(query)
+        .then(response => this._updateAccountStatus(response.data.Activation))
+        .then(id =>  this._deleteActivationObject(id))
+        .then(response => resolve(response))
+        .catch(error => reject(this._createErrorObject("activateAccount", 500, error,
+          "Unable to activate account. Wrong or old link maybe?")));
     });
   }
 
-  _updateAccountStatus(id, successFunc, errorFunc) {
-    let query = {
+  _updateAccountStatus(activationObj) {
+    const query = {
       data: `
           mutation {
-            updateUser(id: \\"` + id + `\\", roles: AUTH) {
+            updateUser(id: \\"` + activationObj.user.id + `\\", roles: AUTH) {
               id
             }
           }`,
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    this.gcClient.query(query, response => {
-      logger.debug("Account status updated to AUTH for user: " + id);
-      successFunc(response);
-    }, error => {
-      let errorObj = {
-        file: "activationHandler.js",
-        method: "_updateAccountStatus",
-        code: 500,
-        error: error,
-        message: "Unable to update account status."
-      };
-
-      errorFunc(errorObj);
+    return new Promise((resolve, reject) => {
+      const id = activationObj.id;
+      return this.gcClient.query(query)
+        .then(response => {
+          logger.debug("Account status updated to AUTH for user: " + id);
+          return resolve(id);
+        })
+        .catch(error => reject(this._createErrorObject("_updateAccountStatus", 500, error,
+          "Unable to update account status.")));
     });
   }
 
-  _deleteActivationObject(id, successFunc, errorFunc) {
-    let query = {
+  _deleteActivationObject(id) {
+    logger.debug("got here.");
+    const query = {
       data: `
           mutation {
             deleteActivation(id: \\"` + id + `\\") {
@@ -92,30 +83,25 @@ export default class {
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    this.gcClient.query(query, response => {
-      logger.debug("Activation object deleted");
-      successFunc(response);
-    }, error => {
-      let errorObj = {
-        file: "activationHandler.js",
-        method: "_deleteActivationObject",
-        code: 500,
-        error: error,
-        message: "Unable to delete activation object."
-      };
 
-      errorFunc(errorObj);
+    return new Promise((resolve, reject) => {
+      return this.gcClient.query(query)
+        .then(response => {
+          logger.debug("Activation object deleted.");
+          return resolve(response);
+        })
+        .catch(error => reject(this._createErrorObject("_deleteActivationObject", 500, error,
+          "Unable to delete activation object.")));
     });
   }
 
   _saveActivationCode(userId, code) {
-    let time = new Date().getTime();
-    let date = new Date(time);
-    let dateISO = date.toISOString();
+    const time = new Date().getTime();
+    const date = new Date(time);
+    const dateISO = date.toISOString();
 
-    return new Promise((resolve, reject) => {
-      let query = {
-        data: `
+    const query = {
+      data: `
         mutation {
           createActivation(
             code: \\"` + code + `\\"
@@ -124,30 +110,23 @@ export default class {
             id
           }
         }`,
-        token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
-      };
+      token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
+    };
 
-      this.gcClient.query(query, response => {
-        logger.debug("Activation code saved for user: " + userId + ".");
-        return resolve(response);
-      }, error => {
-        let errorObj = {
-          file: "activationHandler.js",
-          method: "_saveActivationCode",
-          code: 500,
-          error: error,
-          message: "Unable to save activation code."
-        };
-
-        return reject(errorObj);
-      });
+    return new Promise((resolve, reject) => {
+      return this.gcClient.query(query)
+        .then(response => {
+          logger.debug("Activation code saved for user: " + userId + ".");
+          return resolve(response);
+        })
+        .catch(error => reject(this._createErrorObject("_saveActivationCode", 500, error,
+          "Unable to save activation code.")));
     });
   }
 
   _linkActivationToUser(userId, activationId) {
-    return new Promise((resolve, reject) => {
-      const query = {
-        data: `
+    const query = {
+      data: `
         mutation {
           setUserActivationRelation(
             userUserId: \\"` + userId + `\\"
@@ -161,37 +140,29 @@ export default class {
             }
           }
         }`,
-        token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
-      };
+      token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
+    };
 
-      this.gcClient.query(query, response => {
-        logger.debug("Activation code linked with user: " + userId + ".");
-        return resolve(response);
-      }, error => {
-        let errorObj = {
-          file: "activationHandler.js",
-          method: "_linkActivationToUser",
-          code: 500,
-          error: error,
-          message: "Unable to link activation object with user object."
-        };
-
-        return reject(errorObj);
-      });
+    return new Promise((resolve, reject) => {
+      return this.gcClient.query(query)
+        .then(response => {
+          logger.debug("Activation code linked with user: " + userId + ".");
+          return resolve(response);
+        })
+        .catch(error => reject(this._createErrorObject("_linkActivationToUser", 500, error,
+          "Unable to link activation object with user object.")));
     });
   }
 
   _sendWelcomeMail(email, vars) {
     return new Promise((resolve, reject) => {
-      fs.readFile(process.cwd() + "/" + ENV_VARS.ROOT +
-        '/welcome-email.html', 'utf8', (error, html) => {
+      fs.readFile(process.cwd() + "/" + ENV_VARS.ROOT + '/welcome-email.html', 'utf8', (error, html) => {
           if (error) {
             return reject(error);
           }
 
           const htmlFinal = this.mailClient.processHTMLString(html, vars);
-          return this.mailClient.sendMail(email, "Welcome to sayHi.ai!",
-            htmlFinal)
+          return this.mailClient.sendMail(email, "Welcome to sayHi.ai!", htmlFinal)
             .then(response => {
               logger.debug("Activation email sent to " + email + ".");
               return resolve(response);
@@ -212,5 +183,15 @@ export default class {
     }
 
     return code;
+  }
+
+  _createErrorObject(method, code, error, message) {
+    return {
+      file: "activationHandler.js",
+      method: method,
+      code: code,
+      error: error,
+      message: message
+    };
   }
 }

@@ -28,18 +28,10 @@ export default class {
     };
 
     return new Promise((resolve, reject) => {
+      const context = this;
       this.transporter.sendMail(mailOptions, function(error, response) {
         if (error) {
-          const errorObj = {
-            file: "mailClient.js",
-            method: "sendMail",
-            code: 500,
-            error: error,
-            message: "Error with nodemailer query."
-          };
-
-          // return reject(errorObj);
-          return resolve(errorObj);
+          return reject(context._createErrorObject("sendMail", 500, error, "Error with nodemailer."));
         }
 
         logger.debug("Mail sent to: " + recipient + " on subject: " + subject + ".");
@@ -55,5 +47,15 @@ export default class {
     }
 
     return finalHtml;
+  }
+
+  _createErrorObject(method, code, error, message) {
+    return {
+      file: "activationHandler.js",
+      method: method,
+      code: code,
+      error: error,
+      message: message
+    };
   }
 }

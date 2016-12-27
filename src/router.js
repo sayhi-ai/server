@@ -9,7 +9,7 @@ import ClientsHandler from "./clients/clientsHandler";
 import FunctionHandler from "./functions/functionHandler";
 import ENV_VARS from "./util/ENV_VARS";
 import logger from "./util/logger";
-var path = require('path');
+const path = require('path');
 
 // Set up environment
 logger.info("Setting up server environment..");
@@ -82,7 +82,7 @@ logger.info("Server handlers set up successfully.");
 // Other functions
 logger.info("Finishing server set up..");
 const extractAuthToken = req => {
-  let auth = authorization.parse(req.get('authorization'));
+  const auth = authorization.parse(req.get('authorization'));
   return auth.token;
 };
 logger.info("Server set up completed.");
@@ -94,27 +94,24 @@ logger.info("Server set up completed.");
 
 // Activate account
 app.get('/account/activate', (req, res) => {
-  functionHandler.getActivationHandler().activateAccount(req.query.code,
-    response => res.redirect('https://google.com'),
-    error => errorHandler("Error activating account", error, res));
+  functionHandler.getActivationHandler().activateAccount(req.query.code)
+    .then(response => res.redirect('https://google.com'))
+    .catch(error => errorHandler("Error activating account", error, res));
 });
 
 // Login
 app.post('/login', (req, res) => {
   let data = req.body;
-  functionHandler.getUserHandler().login(data.email, data.password,
-    response => {
-      return res.send(response);
-    },
-    error => errorHandler("Error during login", error, res));
+  functionHandler.getUserHandler().login(data.email, data.password)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error during login", error, res));
 });
 
 // Link account with auth0
 app.post('/account/link', (req, res) => {
   const token = extractAuthToken(req);
   const data = req.body;
-  functionHandler.getUserHandler().linkAccountAuth0(data.firstName,
-    data.lastName, token,
+  functionHandler.getUserHandler().linkAccountAuth0(data.firstName, data.lastName, token,
     response => res.send(response),
     error => errorHandler("Error creating an account", error, res));
 });
