@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import ENV_VARS from "../util/ENV_VARS";
 import logger from "../util/logger";
 import ErrorHandler from "../util/errorHandler";
+import Promise from "bluebird";
 
 export default class {
   constructor() {

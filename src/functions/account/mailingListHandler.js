@@ -20,40 +20,39 @@ export default class {
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    return new Promise((resolve, reject) => {
-      return this._gcClient.query(query)
-        .then(response => this._createMailingListEntry(email, response.data.User))
-        .then(response => resolve(response))
-        .catch(error => reject(this._errorHandler.create("addToMailingList", 400, error, "Unable to add account to" +
-          "mailing list. Maybe wrong user credentials?")));
-    });
+    return this._gcClient.query(query)
+      .then(response => this._createMailingListEntry(email, response.data.User))
+      .catch(error => {
+        throw this._errorHandler.create("addToMailingList", 400, error, "Unable to add account to" +
+          "mailing list. Maybe wrong user credentials?");
+      });
   }
 
   removeFromMailingList(email) {
     logger.info("Removing user: " + email + " from mailing list..");
 
-    return new Promise((resolve, reject) => {
-      this._getMailingListId(email)
-        .then(response => {
-          const query = {
-            data: `
-              mutation {
-                deleteMailingList(id: \\"` + response.data.MailingList.id + `\\") {
-                  id
-                }
-              }`,
-            token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
-          };
+    return this._getMailingListId(email)
+      .then(response => {
+        const query = {
+          data: `
+            mutation {
+              deleteMailingList(id: \\"` + response.data.MailingList.id + `\\") {
+                id
+              }
+            }`,
+          token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
+        };
 
-          return this._gcClient.query(query)
-        })
-        .then(response => {
-          logger.info("Removed user: " + email + " from mailing list.");
-          return resolve(response);
-        })
-        .catch(error => reject(this._errorHandler.create("removeFromMailingList", 400, error, "Unable to remove" +
-          "account from mailing list. Maybe wrong user credentials?")));
-    });
+        return this._gcClient.query(query);
+      })
+      .then(response => {
+        logger.info("Removed user: " + email + " from mailing list.");
+        return response;
+      })
+      .catch(error => {
+        throw this._errorHandler.create("removeFromMailingList", 400, error, "Unable to remove account from mailing" +
+          "list. Maybe wrong user credentials?");
+      });
   }
 
   _getMailingListId(email) {
@@ -67,11 +66,9 @@ export default class {
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    return new Promise((resolve, reject) => {
-      return this._gcClient.query(query)
-        .then(response => resolve(response))
-        .catch(error => reject(this._errorHandler.create("_getMailingListId", 400, error, "Unable to get mailing list" +
-          "id.")));
+    return this._gcClient.query(query)
+      .catch(error => {
+        throw this._errorHandler.create("_getMailingListId", 400, error, "Unable to get mailing list id.");
       });
   }
 
@@ -86,22 +83,22 @@ export default class {
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    return new Promise((resolve, reject) => {
-      return this._gcClient.query(query)
-        .then(response => {
-          if (user === null) {
-            logger.info("Added user: " + user + " to mailing list.");
-            return resolve(response);
-          } else {
-            const mailingListId = response.data.createMailingList.id;
-            return this._linkUserToMailingList(user.id, mailingListId)
-              .then(response => resolve(response))
-              .catch(error => reject(error));
-          }
-        })
-        .catch(error => reject(this._errorHandler.create("_createMailingListEntry", 400, error, "Unable to create " +
-          "mailing list entry.")));
-    });
+    return this._gcClient.query(query)
+      .then(response => {
+        if (user === null) {
+          logger.info("Added user: " + user + " to mailing list.");
+          return response;
+        }
+
+        const mailingListId = response.data.createMailingList.id;
+        return this._linkUserToMailingList(user.id, mailingListId)
+          .catch(error => {
+            throw error;
+          });
+      })
+      .catch(error => {
+        throw this._errorHandler.create("_createMailingListEntry", 400, error, "Unable to create mailing list entry.");
+      });
   }
 
   _linkUserToMailingList(userID, mailingListID) {
@@ -122,14 +119,13 @@ export default class {
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    return new Promise((resolve, reject) => {
-      return this._gcClient.query(query)
-        .then(response => {
-          logger.info("Added user: " + userID + " to mailing list.");
-          return resolve(response);
-        })
-        .catch(error => reject(this._errorHandler.create("_linkUserToMailingList", 500, error, "Unable to link user " +
-          "to mailing list.")));
-    });
+    return this._gcClient.query(query)
+      .then(response => {
+        logger.info("Added user: " + userID + " to mailing list.");
+        return response;
+      })
+      .catch(error => {
+        throw this._errorHandler.create("_linkUserToMailingList", 500, error, "Unable to link user to mailing list.");
+      });
   }
 }

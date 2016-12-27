@@ -65,6 +65,7 @@
   },
   "dependencies": {
     "auth-header": "^0.3.1",
+    "bluebird": "^3.4.7",
     "body-parser": "^1.15.2",
     "copy-webpack-plugin": "^4.0.1",
     "es6-promise": "^3.3.1",

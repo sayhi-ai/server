@@ -2,12 +2,13 @@ import fetch from "isomorphic-fetch";
 import ENV_VARS from "../util/ENV_VARS";
 import logger from "../util/logger";
 import _errorHandler from "../util/errorHandler";
+import Promise from "bluebird";
 
 export default class {
   constructor() {
     this._errorHandler = new _errorHandler("graphcoolClient.js");
   }
-  
+
   login(query) {
     return this._safeQuery(ENV_VARS.CONSTANTS.GRAPHCOOL_URL,
       "POST", {

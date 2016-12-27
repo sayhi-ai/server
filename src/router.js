@@ -9,6 +9,7 @@ import ClientsHandler from "./clients/clientsHandler";
 import FunctionHandler from "./functions/functionHandler";
 import ENV_VARS from "./util/ENV_VARS";
 import logger from "./util/logger";
+import Promise from "bluebird";
 const path = require('path');
 
 /* ----------------------------------------------------------------------------
@@ -83,6 +84,9 @@ const errorHandler = (error, errorObj, res) => {
   }));
 };
 logger.info("Server handlers set up successfully.");
+
+// Catching promises
+Promise.onPossiblyUnhandledRejection(error => logger.error("Uncaught promise: " + error.message));
 
 // Other functions
 logger.info("Finishing server set up..");
@@ -192,29 +196,27 @@ app.post('/response/bot/remove', (req, res) => {
 app.post('/response/phrase/all', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getPhraseHandler().getPhrases(token,
-    data.botId,
-    response => res.send(response),
-    error => errorHandler("Error getting phrases.", error, res));
+  functionHandler.getPhraseHandler().getPhrases(token, data.botId)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error getting phrases.", error, res));
 });
 
 // Add a phrase
 app.post('/response/phrase/add', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getPhraseHandler().addPhrase(token, data.botId,
-    data.phrase,
-    response => res.send(response),
-    error => errorHandler("Error adding phrase.", error, res));
+  functionHandler.getPhraseHandler().addPhrase(token, data.botId, data.phrase)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error adding phrase.", error, res));
 });
 
 // Remove a phrase
 app.post('/response/phrase/remove', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getPhraseHandler().removePhrase(token, data.phraseId,
-    response => res.send(response),
-    error => errorHandler("Error removing phrase.", error, res));
+  functionHandler.getPhraseHandler().removePhrase(token, data.phraseId)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error removing phrase.", error, res));
 });
 
 /* ----------------------------------------------------------------------------
@@ -226,38 +228,36 @@ app.post('/response/phrase/remove', (req, res) => {
 app.post('/response/response/get', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getResponseHandler().getResponse(token, data.phraseId,
-    response => res.send(response),
-    error => errorHandler("Error getting response.", error, res));
+  functionHandler.getResponseHandler().getResponse(token, data.phraseId)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error getting response.", error, res));
 });
 
 // Get all responses belonging to a phrase
 app.post('/response/response/all', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getResponseHandler().getResponses(token, data.phraseId,
-    response => res.send(response),
-    error => errorHandler("Error getting responses.", error, res));
+  functionHandler.getResponseHandler().getResponses(token, data.phraseId)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error getting responses.", error, res));
 });
 
 // Add response
 app.post('/response/response/add', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getResponseHandler().addResponse(token, data.phraseId,
-    data.response,
-    response => res.send(response),
-    error => errorHandler("Error adding response.", error, res));
+  functionHandler.getResponseHandler().addResponse(token, data.phraseId, data.response)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error adding response.", error, res));
 });
 
 // Remove response
 app.post('/response/response/remove', (req, res) => {
   let token = extractAuthToken(req);
   let data = req.body;
-  functionHandler.getResponseHandler().removeResponse(token, data.phraseId,
-    data.responseId,
-    response => res.send(response),
-    error => errorHandler("Error removing response.", error, res));
+  functionHandler.getResponseHandler().removeResponse(token, data.phraseId, data.responseId)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error removing response.", error, res));
 });
 
 /* ----------------------------------------------------------------------------

@@ -29,19 +29,19 @@ export default class {
         }`
     };
 
-    return new Promise((resolve, reject) => {
-      return this._gcClient.login(query)
-        .then(response => {
-          logger.debug("Login successful.");
+    return this._gcClient.login(query)
+      .then(response => {
+        const token = response.data.signinUser.token;
+        logger.debug("Login successful.");
 
-          const token = response.data.signinUser.token;
-          return resolve(JSON.stringify({token: token}));
-        })
-        .catch(error => reject(this._errorHandler.create("login", 401, error, "Username or password is incorrect.")));
-    });
+        return JSON.stringify({token: token});
+      })
+      .catch(error => {
+        throw this._errorHandler.create("login", 401, error, "Username or password is incorrect.");
+      });
   }
 
-  linkAccountAuth0(firstName, lastName, token, successFunc, errorFunc) {
+  linkAccountAuth0(firstName, lastName, token) {
     logger.debug("Auth0 account link request received..");
     const query = {
       data: `
@@ -61,20 +61,14 @@ export default class {
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    this._gcClient.query(query, response => {
-      logger.debug("Auth0 account link successful.");
-      successFunc(response);
-    }, error => {
-      const errorObj = {
-        file: "userHandler.js",
-        method: "linkAccountAuth0",
-        code: 401,
-        error: error,
-        message: "Error linking accounts."
-      };
-
-      errorFunc(errorObj);
-    });
+    return this._gcClient.query(query)
+      .then(response => {
+        logger.debug("Auth0 account link successful.");
+        return response;
+      })
+      .catch(error => {
+        throw this._errorHandler.create("linkAccountAuth0", 400, error, "Error linking accounts.");
+      });
   }
 
   addUser(firstName, lastName, email, password) {
@@ -103,20 +97,20 @@ export default class {
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    return new Promise((resolve, reject) => {
-      this._gcClient.query(query)
-        .then(response => {
-          if (response.data.createUser !== null) {
-            logger.debug("User account created successfully.");
-            this._functionHandler.getActivationHandler().sendActivationRequest(email,
-              response.data.createUser.id, firstName);
-            return resolve(JSON.stringify({created: true}));
-          } else if (response.errors[0].code === ENV_VARS.GC_ERRORS.USER_EXISTS) {
-            logger.debug("Account not created - e-mail already taken.");
-            return resolve(JSON.stringify({created: false, message: "User with that e-mail already exists."}));
-          }
-        })
-        .catch(error => reject(this._errorHandler.create("addUser", 400, error, "Error creating a new account.")));
-    });
+    return this._gcClient.query(query)
+      .then(response => {
+        if (response.data.createUser !== null) {
+          logger.debug("User account created successfully.");
+          this._functionHandler.getActivationHandler().sendActivationRequest(email,
+            response.data.createUser.id, firstName);
+          return JSON.stringify({created: true});
+        } else if (response.errors[0].code === ENV_VARS.GC_ERRORS.USER_EXISTS) {
+          logger.debug("Account not created - e-mail already taken.");
+          return JSON.stringify({created: false, message: "User with that e-mail already exists."});
+        }
+      })
+      .catch(error => {
+        throw this._errorHandler.create("addUser", 400, error, "Error creating a new account.");
+      });
   }
 }
