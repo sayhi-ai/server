@@ -14,7 +14,7 @@ export default class {
     logger.debug("Getting all phrases for bot: " + botId);
 
     const query = {
-      data: `
+      query: `
         query {
           Bot(id: \\"` + botId + `\\") {
             phrases {
@@ -29,7 +29,7 @@ export default class {
     return this._gcClient.query(query)
       .then(response => {
         logger.debug("Got all phrases for bot: " + botId);
-        return JSON.stringify({phrases: response.data.Bot.phrases});
+        return JSON.stringify({phrases: response.Bot.phrases});
       })
       .catch(error => {
         throw this._errorHandler.create("getPhrases", 400, error, "Unable to get all phrases for bot: " + botId + ".");
@@ -40,7 +40,7 @@ export default class {
     logger.debug("Adding a phrase to bot: " + botId);
 
     const query = {
-      data: `
+      query: `
         query {
           Bot(id: \\"` + botId + `\\") {
             phrases(filter: {phrase: \\"` + phrase + `\\"}) {
@@ -70,7 +70,7 @@ export default class {
       })
       .then(noOP => this._gcClient.query(query))
       .then(response => {
-        const phrases = response.data.Bot.phrases;
+        const phrases = response.Bot.phrases;
         if (phrases.length === 0) {
           logger.debug("Phrase does not exists for bot: " + botId + ", creating a new one.");
           return response;
@@ -86,7 +86,7 @@ export default class {
 
   _createNewPhrase(token, botId, phrase) {
     const query = {
-      data: `
+      query: `
         mutation {
           createPhrase(phrase: \\"` + phrase + `\\") {
             id
@@ -100,7 +100,7 @@ export default class {
         logger.debug("Created phrase for bot: " + botId + ", linking phrase with the bot now..");
         return response;
       })
-      .then(response => this._linkPhraseToBot(token, botId, response.data.createPhrase.id))
+      .then(response => this._linkPhraseToBot(token, botId, response.createPhrase.id))
       .catch(error => {
         throw this._errorHandler.create("_createNewPhrase", 400, error, "Unable to create new phrase.");
       });
@@ -108,7 +108,7 @@ export default class {
 
   _linkPhraseToBot(token, botId, phraseId) {
     const query = {
-      data: `
+      query: `
         mutation {
           addToBotPhraseRelation(
             botsBotId: \\"` + botId + `\\",
@@ -127,12 +127,12 @@ export default class {
 
     return this._gcClient.query(query)
       .then(response => {
-        if (response.data.addToBotPhraseRelation === null) {
+        if (response.addToBotPhraseRelation === null) {
           logger.warn("Did not link phrase because a connection already exists between bot and phrase.");
           return JSON.stringify({added: false});
         }
 
-        const phraseId = response.data.addToBotPhraseRelation.phrasesPhrase.id;
+        const phraseId = response.addToBotPhraseRelation.phrasesPhrase.id;
         logger.debug("Linked phrase: " + phraseId + " with bot: " + botId + "successfully.");
         return JSON.stringify({added: true, id: phraseId});
       })
@@ -156,7 +156,7 @@ export default class {
     logger.debug("Removing responses from phrase: " + phraseId + "..");
 
     const query = {
-      data: `
+      query: `
         query {
           Phrase(id: \\"` + phraseId + `\\") {
             responses {
@@ -169,7 +169,7 @@ export default class {
 
     return this._gcClient.query(query)
       .then(responseGc => {
-        let responses = responseGc.data.Phrase.responses;
+        let responses = responseGc.Phrase.responses;
 
         responses = responses.map(response => {
           const context = this;
@@ -196,7 +196,7 @@ export default class {
 
   _removePhrase(token, phraseId) {
     const query = {
-      data: `
+      query: `
           mutation {
             deletePhrase(id: \\"` + phraseId + `\\") {
               id
@@ -207,7 +207,7 @@ export default class {
 
     return this._gcClient.query(query)
       .then(response => {
-        if (response.data.deletePhrase === null) {
+        if (response.deletePhrase === null) {
           logger.warn("Did not remove phrase.");
           return JSON.stringify({removed: false});
         }

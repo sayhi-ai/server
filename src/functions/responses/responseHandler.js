@@ -29,7 +29,7 @@ export default class {
 
   _getResponses(token, phraseId) {
     const query = {
-      data: `
+      query: `
         query {
           Phrase(id: \\"` + phraseId + `\\") {
             responses {
@@ -44,7 +44,7 @@ export default class {
     return this._gcClient.query(query)
       .then(response => {
         logger.debug("Got responses for phrase: " + phraseId + ".");
-        return response.data.Phrase.responses;
+        return response.Phrase.responses;
       })
       .catch(error => {
         throw this._errorHandler.create("_getResponses", 400, error, "Unable to get responses for " +
@@ -67,7 +67,7 @@ export default class {
     logger.debug("Adding a response to phrase: " + phraseId + "..");
 
     const query = {
-      data: `
+      query: `
         query {
           allResponses(filter: {response: \\"` + response + `\\"}) {
             id
@@ -86,7 +86,7 @@ export default class {
       })
       .then(noOp => this._gcClient.query(query))
       .then(responseQl => {
-        const responses = responseQl.data.allResponses;
+        const responses = responseQl.allResponses;
         if (responses.length === 0) {
           logger.debug("Creating a new response: " + response + "..");
           return this._createNewResponse(token, phraseId, response);
@@ -103,7 +103,7 @@ export default class {
 
   _createNewResponse(token, phraseId, response) {
     const query = {
-      data: `
+      query: `
         mutation {
           createResponse(response: \\"` + response + `\\") {
             id
@@ -115,7 +115,7 @@ export default class {
     return this._gcClient.query(query)
       .then(responseQl => {
         logger.debug("Response created, linking response: " + response + " to phrase: " + phraseId + "..");
-        return this._linkResponseToPhrase(token, phraseId, responseQl.data.createResponse.id);
+        return this._linkResponseToPhrase(token, phraseId, responseQl.createResponse.id);
       })
       .catch(error => {
         throw this._errorHandler.create("_createNewResponse", 400, error, "Unable to create new " +
@@ -125,7 +125,7 @@ export default class {
 
   _linkResponseToPhrase(token, phraseId, responseId) {
     const query = {
-      data: `
+      query: `
         mutation {
           addToPhraseResponseRelation(
             phrasesPhraseId: \\"` + phraseId + `\\",
@@ -144,12 +144,12 @@ export default class {
 
     return this._gcClient.query(query)
       .then(response => {
-        if (response.data.addToPhraseResponseRelation === null) {
+        if (response.addToPhraseResponseRelation === null) {
           logger.warn("Did not link response because a connection already exists between phrase and response.");
           return JSON.stringify({added: false});
         }
 
-        const responseId = response.data.addToPhraseResponseRelation.responsesResponse.id;
+        const responseId = response.addToPhraseResponseRelation.responsesResponse.id;
         logger.debug("Linked response: " + responseId + " with phrase: " + phraseId + " successfully.");
         return JSON.stringify({added: true, id: responseId});
       })
@@ -163,7 +163,7 @@ export default class {
     logger.debug("Removing response: " + responseId + "..");
 
     const query = {
-      data: `
+      query: `
         query {
           Response(id: \\"` + responseId + `\\") {
             phrases {
@@ -176,7 +176,7 @@ export default class {
 
     return this._gcClient.query(query)
       .then(responseGc => {
-        if (responseGc.data.Response.phrases.length === 1) {
+        if (responseGc.Response.phrases.length === 1) {
           logger.debug("Response found to remove.");
           return this._removeResponse(token, responseId);
         }
@@ -192,7 +192,7 @@ export default class {
 
   _unlinkResponse(token, phraseId, responseId) {
     const query = {
-      data: `
+      query: `
         mutation {
           removeFromPhraseResponseRelation(
             phrasesPhraseId: \\"` + phraseId + `\\",
@@ -211,7 +211,7 @@ export default class {
 
     return this._gcClient.query(query)
       .then(response => {
-        if (response.data.removeFromPhraseResponseRelation === null) {
+        if (response.removeFromPhraseResponseRelation === null) {
           logger.warn("Did not unlink response.");
           return JSON.stringify({removed: false});
         }
@@ -226,7 +226,7 @@ export default class {
 
   _removeResponse(token, responseId) {
     const query = {
-      data: `
+      query: `
         mutation {
           deleteResponse(id: \\"` + responseId + `\\") {
             id
@@ -237,7 +237,7 @@ export default class {
 
     return this._gcClient.query(query)
       .then(response => {
-        if (response.data.deleteResponse === null) {
+        if (response.deleteResponse === null) {
           logger.warn("Did not remove response.");
           return JSON.stringify({removed: false});
         }

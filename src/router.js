@@ -134,7 +134,15 @@ app.post('/account/create', (req, res) => {
 });
 
 // Change password
-app.post('/account/changepassword', (req, res) => {
+app.post('/account/password/sendcode', (req, res) => {
+  const data = req.body;
+  functionHandler.getPasswordResetHandler().sendResetCode(data.email, data.device)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error sending password reset email an account", error, res));
+});
+
+// Change password
+app.post('/account/password/reset', (req, res) => {
 
 });
 

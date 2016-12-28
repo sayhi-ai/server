@@ -11,9 +11,9 @@ export default class {
   addToMailingList(email) {
     logger.debug("Adding user: " + email + " to mailing list..");
     const query = {
-      data: `
+      query: `
         query {
-          User(email: \\"` + email + `\\") {
+          User(email: "` + email + `") {
             id
           }
         }`,
@@ -21,7 +21,7 @@ export default class {
     };
 
     return this._gcClient.query(query)
-      .then(response => this._createMailingListEntry(email, response.data.User))
+      .then(response => this._createMailingListEntry(email, response.User))
       .catch(error => {
         throw this._errorHandler.create("addToMailingList", 400, error, "Unable to add account to" +
           "mailing list. Maybe wrong user credentials?");
@@ -34,9 +34,9 @@ export default class {
     return this._getMailingListId(email)
       .then(response => {
         const query = {
-          data: `
+          query: `
             mutation {
-              deleteMailingList(id: \\"` + response.data.MailingList.id + `\\") {
+              deleteMailingList(id: "` + response.MailingList.id + `") {
                 id
               }
             }`,
@@ -57,9 +57,9 @@ export default class {
 
   _getMailingListId(email) {
     const query = {
-      data: `
-        query {
-          MailingList(email: \\"` + email + `\\") {
+      query: `
+        query {x
+          MailingList(email: "` + email + `") {
             id
             }
          }`,
@@ -74,9 +74,9 @@ export default class {
 
   _createMailingListEntry(email, user) {
     const query = {
-      data: `
+      query: `
         mutation {
-          createMailingList(email: \\"` + email + `\\") {
+          createMailingList(email: "` + email + `") {
             id
           }
         }`,
@@ -90,7 +90,7 @@ export default class {
           return response;
         }
 
-        const mailingListId = response.data.createMailingList.id;
+        const mailingListId = response.createMailingList.id;
         return this._linkUserToMailingList(user.id, mailingListId)
           .catch(error => {
             throw error;
@@ -103,11 +103,9 @@ export default class {
 
   _linkUserToMailingList(userID, mailingListID) {
     const query = {
-      data: `
+      query: `
         mutation {
-          setUserMailRelation(
-            usersUserId: \\"` + userID + `\\", 
-            mailinglistMailingListId: \\"` + mailingListID + `\\") {
+          setUserMailRelation(usersUserId: "` + userID + `", mailinglistMailingListId: "` + mailingListID + `") {
             usersUser {
               id
             }

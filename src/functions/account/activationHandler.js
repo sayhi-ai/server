@@ -14,13 +14,13 @@ export default class {
   sendActivationRequest(email, userId, firstName) {
     logger.debug("Sending activation request to " + email + "..");
 
-    const activationCode = this._generateActivationCode();
+    const activationCode = this.generateRandomCode(60);
     const activationLink = ENV_VARS.BASE_URL + '/account/activate?code=' + activationCode;
     const vars = [firstName, activationLink];
 
     return this._sendWelcomeMail(email, vars)
-      .then(response => this._saveActivationCode(userId, activationCode))
-      .then(response => this._linkActivationToUser(userId, response.data.createActivation.id))
+      .then(response => this.saveActivationCode(userId, activationCode))
+      .then(response => this._linkActivationToUser(userId, response.createActivation.id))
       .catch(error => logger.error(this._errorHandler.create("sendActivationRequest", 500, error,
         "Unable to create activatio request for user:  " + email)));
   }
@@ -29,9 +29,9 @@ export default class {
     logger.debug("Request to activate account received.");
 
     const query = {
-      data: `
+      query: `
         query {
-          Activation(code: \\"` + code + `\\") {
+          Activation(code: "` + code + `") {
             id,
             user {
               id
@@ -42,7 +42,7 @@ export default class {
     };
 
     return this._gcClient.query(query)
-      .then(response => this._updateAccountStatus(response.data.Activation))
+      .then(response => this._updateAccountStatus(response.Activation))
       .then(id => this._deleteActivationObject(id))
       .catch(error => {
         throw this._errorHandler.create("activateAccount", 500, error, "Unable to activate account. Wrong or old" +
@@ -50,11 +50,52 @@ export default class {
       });
   }
 
+  isActivated(email) {
+    logger.debug("Checking if user account: " + email + " is activated.");
+
+    const query = {
+      query: `
+        query {
+          User(email: "` + email + `") {
+            roles
+          }
+        }`,
+      token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
+    };
+
+    return this._gcClient.query(query)
+      .then(response => response.User.roles === "AUTH")
+      .catch(error => {
+        throw this._errorHandler.create("isActivated", 500, error, "Unable to check if account: " + email + " is actived");
+      });
+  }
+
+  updateActivationCode(id, code) {
+    const query = {
+      query: `
+        mutation {
+          updateActivation(id: "` + id + `", code: "` + code + `") {
+            id
+          }
+        }`,
+      token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
+    };
+
+    return this._gcClient.query(query)
+      .then(response => {
+        logger.debug("Updated activation code for: " + id + ".");
+        return response;
+      })
+      .catch(error => {
+        throw this._errorHandler.create("isActivated", 500, error, "Unable to update activation code for: " + id + ".");
+      });
+  }
+
   _updateAccountStatus(activationObj) {
     const query = {
-      data: `
+      query: `
           mutation {
-            updateUser(id: \\"` + activationObj.user.id + `\\", roles: AUTH) {
+            updateUser(id: "` + activationObj.user.id + `", roles: AUTH) {
               id
             }
           }`,
@@ -75,9 +116,9 @@ export default class {
   _deleteActivationObject(id) {
     logger.debug("got here.");
     const query = {
-      data: `
+      query: `
           mutation {
-            deleteActivation(id: \\"` + id + `\\") {
+            deleteActivation(id: "` + id + `") {
               id
             }
           }`,
@@ -94,18 +135,15 @@ export default class {
       });
   }
 
-  _saveActivationCode(userId, code) {
+  saveActivationCode(userId, code) {
     const time = new Date().getTime();
     const date = new Date(time);
     const dateISO = date.toISOString();
 
     const query = {
-      data: `
+      query: `
         mutation {
-          createActivation(
-            code: \\"` + code + `\\"
-            date: \\"` + dateISO + `\\"
-          ) {
+          createActivation(code: "` + code + `" date: "` + dateISO + `") {
             id
           }
         }`,
@@ -118,18 +156,15 @@ export default class {
         return response;
       })
       .catch(error => {
-        throw this._errorHandler.create("_saveActivationCode", 500, error, "Unable to save activation code.");
+        throw this._errorHandler.create("saveActivationCode", 500, error, "Unable to save activation code.");
       });
   }
 
   _linkActivationToUser(userId, activationId) {
     const query = {
-      data: `
+      query: `
         mutation {
-          setUserActivationRelation(
-            userUserId: \\"` + userId + `\\"
-            activationActivationId: \\"` + activationId + `\\"
-          ) {
+          setUserActivationRelation(userUserId: "` + userId + `" activationActivationId: "` + activationId + `") {
             userUser{
               id
             }
@@ -170,11 +205,11 @@ export default class {
     });
   }
 
-  _generateActivationCode() {
+  generateRandomCode(length) {
     let code = "";
     let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < length; i++) {
       code += possible.charAt(Math.floor(Math.random() * possible.length));
     }
 

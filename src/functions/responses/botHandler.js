@@ -6,8 +6,8 @@ import Promise from "bluebird";
 
 export default class {
   constructor(functionHandler, clientsHandler) {
-    this.phraseHandler = functionHandler.getPhraseHandler();
-    this.gcClient = clientsHandler.getGCClient();
+    this._phraseHandler = functionHandler.getPhraseHandler();
+    this._gcClient = clientsHandler.getGCClient();
     this._errorHandler = new ErrorHandler("botHandler.js");
   }
 
@@ -16,9 +16,9 @@ export default class {
     logger.debug("Getting all bots for user: " + decodedToken.userId + "..");
 
     const query = {
-      data: `
+      query: `
         query {
-          User(id: \\"` + decodedToken.userId + `\\") {
+          User(id: "` + decodedToken.userId + `") {
             bots {
               id,
               name
@@ -28,9 +28,9 @@ export default class {
       token: token
     };
 
-    return this.gcClient.query(query)
+    return this._gcClient.query(query)
       .then(response => {
-        const bots = response.data.User.bots;
+        const bots = response.User.bots;
         logger.debug("Got all bots for user: " + decodedToken.userId + ".");
         return JSON.stringify({bots: bots});
       })
@@ -45,10 +45,10 @@ export default class {
     const decodedToken = jwtDecode(token);
 
     const query = {
-      data: `
+      query: `
         query {
-          User(id: \\"` + decodedToken.userId + `\\") {
-            bots(filter: {name: \\"` + name + `\\"}) {
+          User(id: "` + decodedToken.userId + `") {
+            bots(filter: {name: "` + name + `"}) {
               id
             }
           }
@@ -71,13 +71,13 @@ export default class {
         }
         return "no-op";
       })
-      .then(noOp => this.gcClient.query(query))
+      .then(noOp => this._gcClient.query(query))
       .then(responseQl => {
         if (description === null) {
           description = "";
         }
 
-        const bots = responseQl.data.User.bots;
+        const bots = responseQl.User.bots;
         if (bots.length === 0) {
           logger.debug("No bot with the given information exists for user: " + decodedToken.userId +
             ", creating a new one.");
@@ -93,23 +93,19 @@ export default class {
 
   _createNewBot(token, name, type, description) {
     const query = {
-      data: `
+      query: `
         mutation {
-          createBot(
-            name: \\"` + name + `\\",
-            type: \\"` + type + `\\",
-            description: \\"` + description + `\\"
-          ) {
+          createBot(name: "` + name + `", type: "` + type + `", description: "` + description + `") {
             id
           }
         }`,
       token: token
     };
 
-    return this.gcClient.query(query)
+    return this._gcClient.query(query)
       .then(response => {
         logger.debug("Created new bot. Linking it with user..");
-        this._linkBotWithUser(token, response.data.createBot.id);
+        this._linkBotWithUser(token, response.createBot.id);
       })
       .catch(error => {
         throw this._errorHandler.create("_createNewBot", 500, error, "Error creating a new bot.");
@@ -120,12 +116,9 @@ export default class {
     const decodedToken = jwtDecode(token);
 
     const query = {
-      data: `
+      query: `
         mutation {
-          addToUserBotRelation(
-            usersUserId: \\"` + decodedToken.userId + `\\",,
-            botsBotId: \\"` + botId + `\\",
-          ) {
+          addToUserBotRelation(usersUserId: "` + decodedToken.userId + `", botsBotId: "` + botId + `") {
             usersUser {
               id
             }
@@ -137,15 +130,15 @@ export default class {
       token: token
     };
 
-    return this.gcClient.query(query)
+    return this._gcClient.query(query)
       .then(response => {
-        if (response.data.addToUserBotRelation === null) {
+        if (response.addToUserBotRelation === null) {
           logger.warn("Did not link bot because a connection already exists " +
             "between user and bot.");
           return JSON.stringify({added: false});
         }
 
-        const botId = response.data.addToUserBotRelation.botsBot.id;
+        const botId = response.addToUserBotRelation.botsBot.id;
         logger.debug("Linked bot with user successfully.");
         return JSON.stringify({added: true, id: botId});
       })
@@ -167,9 +160,9 @@ export default class {
   _removePhrasesFromBot(token, botId) {
     logger.debug("Removing phrases from bot: " + botId + "..");
     const query = {
-      data: `
+      query: `
         query {
-          Bot(id: \\"` + botId + `\\") {
+          Bot(id: "` + botId + `") {
             phrases {
               id
             }
@@ -178,9 +171,9 @@ export default class {
       token: token
     };
 
-    return this.gcClient.query(query)
+    return this._gcClient.query(query)
       .then(response => {
-        const phrases = response.data.Bot.phrases;
+        const phrases = response.Bot.phrases;
         return new Promise((resolve, reject) => this._removePhraseResponsesRecursive(token, phrases.slice(),
           resolve, reject))
           .then(response => phrases)
@@ -192,7 +185,7 @@ export default class {
         const phrasesImpl = phrases.map(phrase => {
           const context = this;
           return Promise.resolve()
-            .then(() => context.phraseHandler._removePhrase(token, phrase.id))
+            .then(() => context._phraseHandler._removePhrase(token, phrase.id))
             .catch(error => {
               throw error;
             });
@@ -212,7 +205,7 @@ export default class {
     }
     const phrase = phrases.pop();
     const context = this;
-    const promise = new Promise((resolve, reject) => context.phraseHandler._removeResponsesFromPhrase(token, phrase.id,
+    const promise = new Promise((resolve, reject) => context._phraseHandler._removeResponsesFromPhrase(token, phrase.id,
         resolve, reject));
 
     promise.then(result => this._removePhraseResponsesRecursive(token, phrases, successFunc, errorFunc));
@@ -220,18 +213,18 @@ export default class {
 
   _removeBot(token, botId) {
     const query = {
-      data: `
+      query: `
           mutation {
-            deleteBot(id: \\"` + botId + `\\") {
+            deleteBot(id: "` + botId + `") {
               id
             }
           }`,
       token: token
     };
 
-    return this.gcClient.query(query)
+    return this._gcClient.query(query)
       .then(response => {
-        if (response.data.deleteBot === null) {
+        if (response.deleteBot === null) {
           logger.warn("Did not remove bot.");
           return JSON.stringify({removed: false});
         }

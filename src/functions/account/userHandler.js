@@ -12,12 +12,12 @@ export default class {
   login(email, password) {
     logger.debug("Login request received..");
     const query = {
-      data: `
+      query: `
         mutation {
           signinUser(
             email: { 
-              email: \\"` + email + `\\",
-              password: \\"` + password + `\\"
+              email: "` + email + `",
+              password: "` + password + `"
             }
           ) {
             user {
@@ -31,29 +31,49 @@ export default class {
 
     return this._gcClient.login(query)
       .then(response => {
-        const token = response.data.signinUser.token;
+        if (response === null) {
+          throw this._errorHandler.create("login", 401, "", "Username or password is incorrect.");
+        }
+        const token = response.signinUser.token;
         logger.debug("Login successful.");
 
-        return JSON.stringify({token: token});
+        return token;
+      })
+      .then(token => this._functionHandler.getActivationHandler().isActivated(email)
+        .then(activated => {
+          return {
+            token: token,
+            activated: activated
+          };
+        }))
+        .catch(error => {
+          throw error;
+        })
+      .then(result => {
+        if (!result.activated) {
+          throw this._errorHandler.create("login", 401, "", "Account not activated.");
+        }
+        logger.debug("Account is activated.");
+        return JSON.stringify({token: result.token});
       })
       .catch(error => {
-        throw this._errorHandler.create("login", 401, error, "Username or password is incorrect.");
+        throw error;
       });
   }
 
   linkAccountAuth0(firstName, lastName, token) {
     logger.debug("Auth0 account link request received..");
     const query = {
-      data: `
+      query: `
         mutation {
           createUser(
             authProvider: { 
               auth0: { 
-                idToken: \\"` + token + `\\" 
+                idToken: "` + token + `" 
               }
             },
-            firstName: \\"` + firstName + `\\",
-            lastName: \\"` + lastName + `\\",
+            firstName: "` + firstName + `",
+            lastName: "` + lastName + `",
           ) {
             id
           }
@@ -78,18 +98,18 @@ export default class {
     const dateISO = date.toISOString();
 
     const query = {
-      data: `
+      query: `
           mutation {
             createUser(
               authProvider: {
                 email: {
-                  email: \\"` + email + `\\",
-                  password: \\"` + password + `\\",
+                  email: "` + email + `",
+                  password: "` + password + `",
                 }
               },
-              firstName: \\"` + firstName + `\\",
-              lastName: \\"` + lastName + `\\",
-              joined: \\"` + dateISO + `\\",
+              firstName: "` + firstName + `",
+              lastName: "` + lastName + `",
+              joined: "` + dateISO + `",
             ) {
               id
             }
