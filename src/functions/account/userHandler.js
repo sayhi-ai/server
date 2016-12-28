@@ -119,10 +119,10 @@ export default class {
 
     return this._gcClient.query(query)
       .then(response => {
-        if (response.data.createUser !== null) {
+        if (response.createUser !== null) {
           logger.debug("User account created successfully.");
           this._functionHandler.getActivationHandler().sendActivationRequest(email,
-            response.data.createUser.id, firstName);
+            response.createUser.id, firstName);
           return JSON.stringify({created: true});
         } else if (response.errors[0].code === ENV_VARS.GC_ERRORS.USER_EXISTS) {
           logger.debug("Account not created - e-mail already taken.");
