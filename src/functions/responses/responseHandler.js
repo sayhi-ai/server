@@ -31,7 +31,7 @@ export default class {
     const query = {
       query: `
         query {
-          Phrase(id: \\"` + phraseId + `\\") {
+          Phrase(id: "` + phraseId + `") {
             responses {
               id,
               response
@@ -69,7 +69,7 @@ export default class {
     const query = {
       query: `
         query {
-          allResponses(filter: {response: \\"` + response + `\\"}) {
+          allResponses(filter: {response: "` + response + `"}) {
             id
           }
         }`,
@@ -105,7 +105,7 @@ export default class {
     const query = {
       query: `
         mutation {
-          createResponse(response: \\"` + response + `\\") {
+          createResponse(response: "` + response + `") {
             id
           }
         }`,
@@ -128,8 +128,8 @@ export default class {
       query: `
         mutation {
           addToPhraseResponseRelation(
-            phrasesPhraseId: \\"` + phraseId + `\\",
-            responsesResponseId: \\"` + responseId + `\\"
+            phrasesPhraseId: "` + phraseId + `",
+            responsesResponseId: "` + responseId + `"
           ) {
             phrasesPhrase {
               id
@@ -165,7 +165,7 @@ export default class {
     const query = {
       query: `
         query {
-          Response(id: \\"` + responseId + `\\") {
+          Response(id: "` + responseId + `") {
             phrases {
               id
             }
@@ -195,8 +195,8 @@ export default class {
       query: `
         mutation {
           removeFromPhraseResponseRelation(
-            phrasesPhraseId: \\"` + phraseId + `\\",
-            responsesResponseId: \\"` + responseId + `\\"
+            phrasesPhraseId: "` + phraseId + `",
+            responsesResponseId: "` + responseId + `"
           ) {
             phrasesPhrase {
               id
@@ -228,7 +228,7 @@ export default class {
     const query = {
       query: `
         mutation {
-          deleteResponse(id: \\"` + responseId + `\\") {
+          deleteResponse(id: "` + responseId + `") {
             id
           }
         }`,

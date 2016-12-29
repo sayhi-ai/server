@@ -16,7 +16,7 @@ export default class {
     const query = {
       query: `
         query {
-          Bot(id: \\"` + botId + `\\") {
+          Bot(id: "` + botId + `") {
             phrases {
               id,
               phrase
@@ -42,8 +42,8 @@ export default class {
     const query = {
       query: `
         query {
-          Bot(id: \\"` + botId + `\\") {
-            phrases(filter: {phrase: \\"` + phrase + `\\"}) {
+          Bot(id: "` + botId + `") {
+            phrases(filter: {phrase: "` + phrase + `"}) {
               id
             }
           }
@@ -88,7 +88,7 @@ export default class {
     const query = {
       query: `
         mutation {
-          createPhrase(phrase: \\"` + phrase + `\\") {
+          createPhrase(phrase: "` + phrase + `") {
             id
           }
         }`,
@@ -111,8 +111,8 @@ export default class {
       query: `
         mutation {
           addToBotPhraseRelation(
-            botsBotId: \\"` + botId + `\\",
-            phrasesPhraseId: \\"` + phraseId + `\\"
+            botsBotId: "` + botId + `",
+            phrasesPhraseId: "` + phraseId + `"
           ) {
             botsBot {
               id
@@ -158,7 +158,7 @@ export default class {
     const query = {
       query: `
         query {
-          Phrase(id: \\"` + phraseId + `\\") {
+          Phrase(id: "` + phraseId + `") {
             responses {
               id
             }
@@ -198,7 +198,7 @@ export default class {
     const query = {
       query: `
           mutation {
-            deletePhrase(id: \\"` + phraseId + `\\") {
+            deletePhrase(id: "` + phraseId + `") {
               id
             }
           }`,

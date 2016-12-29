@@ -26,10 +26,11 @@ export default class {
             }, 
             token 
           }
-        }`
+        }`,
+      token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
-    return this._gcClient.login(query)
+    return this._gcClient.query(query)
       .then(response => {
         if (response === null) {
           throw this._errorHandler.create("login", 401, "", "Username or password is incorrect.");
@@ -38,6 +39,9 @@ export default class {
         logger.debug("Login successful.");
 
         return token;
+      })
+      .catch(error => {
+        throw this._errorHandler.create("login", 401, error, "Username or password is incorrect.");
       })
       .then(token => this._functionHandler.getActivationHandler().isActivated(email)
         .then(activated => {
@@ -124,12 +128,12 @@ export default class {
           this._functionHandler.getActivationHandler().sendActivationRequest(email,
             response.createUser.id, firstName);
           return JSON.stringify({created: true});
-        } else if (response.errors[0].code === ENV_VARS.GC_ERRORS.USER_EXISTS) {
-          logger.debug("Account not created - e-mail already taken.");
-          return JSON.stringify({created: false, message: "User with that e-mail already exists."});
         }
       })
       .catch(error => {
+        if (error.error.rawError[0].code === ENV_VARS.GC_ERRORS.USER_EXISTS) {
+          return JSON.stringify({created: false, message: "User with that e-mail already exists."});
+        }
         throw this._errorHandler.create("addUser", 400, error, "Error creating a new account.");
       });
   }

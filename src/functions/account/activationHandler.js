@@ -20,7 +20,6 @@ export default class {
 
     return this._sendWelcomeMail(email, vars)
       .then(response => this.saveActivationCode(userId, activationCode))
-      .then(response => this._linkActivationToUser(userId, response.createActivation.id))
       .catch(error => logger.error(this._errorHandler.create("sendActivationRequest", 500, error,
         "Unable to create activatio request for user:  " + email)));
   }
@@ -43,7 +42,7 @@ export default class {
 
     return this._gcClient.query(query)
       .then(response => this._updateAccountStatus(response.Activation))
-      .then(id => this._deleteActivationObject(id))
+      .then(id => this.deleteActivationObject(id))
       .catch(error => {
         throw this._errorHandler.create("activateAccount", 500, error, "Unable to activate account. Wrong or old" +
           " link maybe?");
@@ -113,15 +112,15 @@ export default class {
       });
   }
 
-  _deleteActivationObject(id) {
+  deleteActivationObject(id) {
     logger.debug("got here.");
     const query = {
       query: `
-          mutation {
-            deleteActivation(id: "` + id + `") {
-              id
-            }
-          }`,
+        mutation {
+          deleteActivation(id: "` + id + `") {
+            id
+          }
+        }`,
       token: ENV_VARS.CONSTANTS.MASTER_GRAPHCOOL_TOKEN
     };
 
@@ -131,7 +130,7 @@ export default class {
         return response;
       })
       .catch(error => {
-        throw this._errorHandler.create("_deleteActivationObject", 500, error, "Unable to delete activation object.");
+        throw this._errorHandler.create("deleteActivationObject", 500, error, "Unable to delete activation object.");
       });
   }
 
@@ -155,6 +154,7 @@ export default class {
         logger.debug("Activation code saved for user: " + userId + ".");
         return response;
       })
+      .then(response => this._linkActivationToUser(userId, response.createActivation.id))
       .catch(error => {
         throw this._errorHandler.create("saveActivationCode", 500, error, "Unable to save activation code.");
       });

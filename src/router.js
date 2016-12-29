@@ -105,7 +105,7 @@ logger.info("Server set up completed.");
 app.get('/account/activate', (req, res) => {
   functionHandler.getActivationHandler().activateAccount(req.query.code)
     .then(response => res.redirect('https://google.com'))
-    .catch(error => errorHandler("Error activating account", error, res));
+    .catch(error => errorHandler("Error activating account.", error, res));
 });
 
 // Login
@@ -113,7 +113,7 @@ app.post('/login', (req, res) => {
   let data = req.body;
   functionHandler.getUserHandler().login(data.email, data.password)
     .then(response => res.send(response))
-    .catch(error => errorHandler("Error during login", error, res));
+    .catch(error => errorHandler("Error during login.", error, res));
 });
 
 // Link account with auth0
@@ -122,7 +122,7 @@ app.post('/account/link', (req, res) => {
   const data = req.body;
   functionHandler.getUserHandler().linkAccountAuth0(data.firstName, data.lastName, token)
     .then(response => res.send(response))
-    .catch(error => errorHandler("Error creating an account", error, res));
+    .catch(error => errorHandler("Error creating an account.", error, res));
 });
 
 // Create an account
@@ -130,20 +130,23 @@ app.post('/account/create', (req, res) => {
   const data = req.body;
   functionHandler.getUserHandler().addUser(data.firstName, data.lastName, data.email, data.password)
     .then(response => res.send(response))
-    .catch(error => errorHandler("Error creating an account", error, res));
+    .catch(error => errorHandler("Error creating an account.", error, res));
 });
 
-// Change password
+// Request password reset code
 app.post('/account/password/sendcode', (req, res) => {
   const data = req.body;
   functionHandler.getPasswordResetHandler().sendResetCode(data.email, data.device)
     .then(response => res.send(response))
-    .catch(error => errorHandler("Error sending password reset email an account", error, res));
+    .catch(error => errorHandler("Error sending password reset email an account.", error, res));
 });
 
-// Change password
+// Reset password
 app.post('/account/password/reset', (req, res) => {
-
+  const data = req.body;
+  functionHandler.getPasswordResetHandler().resetPassword(data.email, data.code, data.password)
+    .then(response => res.send(response))
+    .catch(error => errorHandler("Error resetting password.", error, res));
 });
 
 // Add email to mailing list
@@ -151,7 +154,7 @@ app.post('/account/subscribe', (req, res) => {
   let data = req.body;
   functionHandler.getMailingListHandler().addToMailingList(data.email)
     .then(response => res.send(response))
-    .catch(error => errorHandler("Error subscribing to mailing list", error, res));
+    .catch(error => errorHandler("Error subscribing to mailing list.", error, res));
 });
 
 // Remove email from mailing list
@@ -159,7 +162,7 @@ app.post('/account/unsubscribe', (req, res) => {
   let data = req.body;
   functionHandler.getMailingListHandler().removeFromMailingList(data.email)
     .then(response => res.send(response))
-    .then(error => errorHandler("Error unsubscribing from mailing list", error, res));
+    .then(error => errorHandler("Error unsubscribing from mailing list.", error, res));
 });
 
 /* ----------------------------------------------------------------------------
