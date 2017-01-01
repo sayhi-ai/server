@@ -9,37 +9,55 @@ export default class {
     this._errorHandler = new ErrorHandler("responseHandler.js");
   }
 
-  getResponses(token, phraseId) {
+  getResponse(token, phraseId, type, vars) {
+    logger.debug("Getting a response for phrase: " + phraseId + "..");
+    return this._getResponses(token, phraseId, type, vars)
+      .then(response => this._chooseResponse(response))
+      .catch(error => {
+        throw error;
+      });
+  }
+
+  getResponses(token, phraseId, type) {
     logger.debug("Getting responses for phrase: " + phraseId + "..");
-    return this._getResponses(token, phraseId)
+    return this._getResponses(token, phraseId, type, null)
       .then(response => JSON.stringify({responses: response}))
       .catch(error => {
         throw error;
       });
   }
 
-  getResponse(token, phraseId, successFunc) {
-    logger.debug("Getting a response for phrase: " + phraseId + "..");
-    return this._getResponses(token, phraseId)
-      .then(response => this._chooseResponse(response, successFunc))
-      .catch(error => {
-        throw error;
-      });
-  }
-
-  _getResponses(token, phraseId) {
-    const query = {
-      query: `
-        query {
-          Phrase(id: "` + phraseId + `") {
-            responses {
-              id,
-              response
+  _getResponses(token, phraseId, type, vars) {
+    let query;
+    if (vars === null) {
+      query = {
+        query: `
+          query {
+            Phrase(id: "` + phraseId + `") {
+              responses {
+                id,
+                ` + type + `
+              }
             }
-          }
-        }`,
-      token: token
-    };
+          }`,
+        token: token
+      };
+    } else {
+      query = {
+        query: `
+          query {
+            Phrase(id: "` + phraseId + `") {
+              responses(filter: {
+                vars: ` + JSON.stringify(vars) + `
+              }) {
+                id,
+                ` + type + `
+              }
+            }
+          }`,
+        token: token
+      };
+    }
 
     return this._gcClient.query(query)
       .then(response => {
@@ -55,21 +73,21 @@ export default class {
   _chooseResponse(responses) {
     if (responses.length > 0) {
       const index = Math.floor(Math.random() * responses.length);
-      logger.debug("Chose a response.");
+      logger.debug("Chose response " + index + ".");
       return JSON.stringify({response: responses[index]});
     }
 
     logger.warn("No responses found to choose from.");
-    return JSON.stringify({response: ""});
+    return JSON.stringify({response: null});
   }
 
-  addResponse(token, phraseId, response) {
+  addResponse(token, phraseId, text, html, vars) {
     logger.debug("Adding a response to phrase: " + phraseId + "..");
 
     const query = {
       query: `
         query {
-          allResponses(filter: {response: "` + response + `"}) {
+          allResponses(filter: {text: "` + text + `"}) {
             id
           }
         }`,
@@ -78,7 +96,7 @@ export default class {
 
     return Promise.resolve()
       .then(() => {
-        if (response === "" || response.length > ENV_VARS.CONSTANTS.MAX_RESPONSE_LENGTH) {
+        if (text === "" || text.length > ENV_VARS.CONSTANTS.MAX_RESPONSE_LENGTH) {
           throw this._errorHandler.create("addResponse", 400, "", "Length of response must be between 0 and " +
             ENV_VARS.CONSTANTS.MAX_RESPONSE_LENGTH + ".");
         }
@@ -88,10 +106,10 @@ export default class {
       .then(responseQl => {
         const responses = responseQl.allResponses;
         if (responses.length === 0) {
-          logger.debug("Creating a new response: " + response + "..");
-          return this._createNewResponse(token, phraseId, response);
+          logger.debug("Creating a new response: " + text + "..");
+          return this._createNewResponse(token, phraseId, text, html, vars);
         } else if (responses.length === 1) {
-          logger.debug("Response exists already, linking response: " + response + " to phrase: " + phraseId + "..");
+          logger.debug("Response exists already, linking response: " + text + " to phrase: " + phraseId + "..");
           return this._linkResponseToPhrase(token, phraseId, responses[0].id);
         }
         throw this._errorHandler.create("addResponse", 400, "", "Duplicate response found.");
@@ -101,11 +119,20 @@ export default class {
       });
   }
 
-  _createNewResponse(token, phraseId, response) {
+  _createNewResponse(token, phraseId, text, html, vars) {
+    let realVars = ["{}"];
+    if (vars.length > 0) {
+      realVars = vars;
+    }
+
     const query = {
       query: `
         mutation {
-          createResponse(response: "` + response + `") {
+          createResponse(
+            text: "` + text + `",
+            html: "` + html + `",
+            vars: ` + JSON.stringify(realVars) + `
+          ) {
             id
           }
         }`,
@@ -114,12 +141,12 @@ export default class {
 
     return this._gcClient.query(query)
       .then(responseQl => {
-        logger.debug("Response created, linking response: " + response + " to phrase: " + phraseId + "..");
+        logger.debug("Response created, linking response: " + text + " to phrase: " + phraseId + "..");
         return this._linkResponseToPhrase(token, phraseId, responseQl.createResponse.id);
       })
       .catch(error => {
         throw this._errorHandler.create("_createNewResponse", 400, error, "Unable to create new " +
-          "response: " + response + ".");
+          "response: " + text + ".");
       });
   }
 

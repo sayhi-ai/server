@@ -11,6 +11,35 @@ export default class {
     this._errorHandler = new ErrorHandler("botHandler.js");
   }
 
+  getBot(token, name) {
+    const decodedToken = jwtDecode(token);
+    logger.debug("Getting all bots for user: " + decodedToken.userId + "..");
+
+    const query = {
+      query: `
+        query {
+          User(id: "` + decodedToken.userId + `") {
+            bots(filter: {name: "` + name + `"}) {
+              id,
+              type,
+              description
+            }
+          }
+        }`,
+      token: token
+    };
+
+    return this._gcClient.query(query)
+      .then(response => {
+        const bot = response.User.bots[0];
+        logger.debug("Got bot with name: " + name + " for user: " + decodedToken.userId + ".");
+        return JSON.stringify({bot: bot});
+      })
+      .catch(error => {
+        throw this._errorHandler.create("getBot", 400, error, "Error getting bot for user: " + decodedToken.userId + ".");
+      });
+  }
+
   getBots(token) {
     const decodedToken = jwtDecode(token);
     logger.debug("Getting all bots for user: " + decodedToken.userId + "..");
@@ -21,7 +50,9 @@ export default class {
           User(id: "` + decodedToken.userId + `") {
             bots {
               id,
-              name
+              name,
+              type,
+              description
             }
           }
         }`,

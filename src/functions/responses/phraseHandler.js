@@ -10,6 +10,33 @@ export default class {
     this._errorHandler = new ErrorHandler("phraseHandler.js");
   }
 
+  getPhraseId(token, botId, phrase) {
+    logger.debug("Getting phrase: " + phrase + " for bot: " + botId + "..");
+
+    const query = {
+      query: `
+        query {
+          Bot(id: "` + botId + `") {
+            phrases(filter: {phrase: "` + phrase + `"}) {
+              id
+            }
+          }
+        }`,
+      token: token
+    };
+
+    return this._gcClient.query(query)
+      .then(response => {
+        const phrase = response.Bot.phrases[0];
+        logger.debug("Got phrase: " + phrase.id + " for bot: " + botId + ".");
+        return JSON.stringify({id: phrase.id});
+      })
+      .catch(error => {
+        throw this._errorHandler.create("getPhraseId", 400, error, "Error getting phrase: " + phrase + " for bot: " +
+          botId + ".");
+      });
+  }
+
   getPhrases(token, botId) {
     logger.debug("Getting all phrases for bot: " + botId);
 
