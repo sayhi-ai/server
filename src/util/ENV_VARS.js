@@ -1,4 +1,4 @@
-let ENV_VARS;
+let ENV_VARS
 
 const CONSTANTS = {
   GRAPHCOOL_URL: "https://api.graph.cool/simple/v1/citcyox3z0pbh0171u6i6b8nu",
@@ -16,11 +16,11 @@ const CONSTANTS = {
   HTTP_LOG_DIR: "./log/http",
   SERVER_LOG_DIR: "./log/server",
   SERVER_LOG_FILE: "./log/server/server.log"
-};
+}
 
 const GC_ERRORS = {
   USER_EXISTS: 3023
-};
+}
 
 if (process.env.NODE_ENV === "production") {
   ENV_VARS = {
@@ -29,7 +29,7 @@ if (process.env.NODE_ENV === "production") {
     CLIENT_URL: "https://dashboard.sayhi.ai",
     CONSTANTS: CONSTANTS,
     GC_ERRORS: GC_ERRORS
-  };
+  }
 } else {
   ENV_VARS = {
     ROOT: "dev",
@@ -37,7 +37,7 @@ if (process.env.NODE_ENV === "production") {
     CLIENT_URL: "http://localhost:4000",
     CONSTANTS: CONSTANTS,
     GC_ERRORS: GC_ERRORS
-  };
+  }
 }
 
-export default ENV_VARS;
+export default ENV_VARS

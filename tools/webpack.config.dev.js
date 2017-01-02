@@ -1,15 +1,15 @@
-var webpack = require('webpack');
-var CopyWebpackPlugin = require('copy-webpack-plugin');
-var fs = require('fs');
+const webpack = require('webpack')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+const fs = require('fs')
 
-var nodeModules = {};
+const nodeModules = {}
 fs.readdirSync('node_modules')
   .filter(function(x) {
-    return ['.bin'].indexOf(x) === -1;
+    return ['.bin'].indexOf(x) === -1
   })
   .forEach(function(mod) {
-    nodeModules[mod] = 'commonjs ' + mod;
-  });
+    nodeModules[mod] = 'commonjs ' + mod
+  })
 
 module.exports = {
   entry: './src/router.js',
@@ -28,7 +28,7 @@ module.exports = {
   externals: nodeModules,
   plugins: [
     new webpack.IgnorePlugin(/\.(css|less)$/),
-    new webpack.BannerPlugin('require("source-map-support").install();',
+    new webpack.BannerPlugin('require("source-map-support").install()',
       {raw: true, entryOnly: false}),
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': '"development"'
@@ -37,4 +37,4 @@ module.exports = {
       {from: 'assets'}
     ])
   ]
-};
+}

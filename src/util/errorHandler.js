@@ -1,7 +1,7 @@
 export default class {
 
   constructor(file) {
-    this.file = file;
+    this.file = file
   }
 
   create(method, httpResponse, error, message) {
@@ -11,6 +11,6 @@ export default class {
       httpRes: httpResponse,
       error: error,
       message: message
-    };
+    }
   }
 }

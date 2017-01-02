@@ -1,17 +1,17 @@
-import ENV_VARS from "../../util/ENV_VARS";
-import logger from "../../util/logger";
-import ErrorHandler from "../../util/errorHandler";
-import Promise from "bluebird";
+import ENV_VARS from "../../util/ENV_VARS"
+import logger from "../../util/logger"
+import ErrorHandler from "../../util/errorHandler"
+import Promise from "bluebird"
 
 export default class {
   constructor(functionHandler, clientsHandler) {
-    this._responseHandler = functionHandler.getResponseHandler();
-    this._gcClient = clientsHandler.getGCClient();
-    this._errorHandler = new ErrorHandler("phraseHandler.js");
+    this._responseHandler = functionHandler.getResponseHandler()
+    this._gcClient = clientsHandler.getGCClient()
+    this._errorHandler = new ErrorHandler("phraseHandler.js")
   }
 
   getPhraseId(token, botId, phrase) {
-    logger.debug("Getting phrase: " + phrase + " for bot: " + botId + "..");
+    logger.debug("Getting phrase: " + phrase + " for bot: " + botId + "..")
 
     const query = {
       query: `
@@ -23,22 +23,22 @@ export default class {
           }
         }`,
       token: token
-    };
+    }
 
     return this._gcClient.query(query)
       .then(response => {
-        const phrase = response.Bot.phrases[0];
-        logger.debug("Got phrase: " + phrase.id + " for bot: " + botId + ".");
-        return JSON.stringify({id: phrase.id});
+        const phrase = response.Bot.phrases[0]
+        logger.debug("Got phrase: " + phrase.id + " for bot: " + botId + ".")
+        return JSON.stringify({id: phrase.id})
       })
       .catch(error => {
         throw this._errorHandler.create("getPhraseId", 400, error, "Error getting phrase: " + phrase + " for bot: " +
-          botId + ".");
-      });
+          botId + ".")
+      })
   }
 
   getPhrases(token, botId) {
-    logger.debug("Getting all phrases for bot: " + botId);
+    logger.debug("Getting all phrases for bot: " + botId)
 
     const query = {
       query: `
@@ -51,20 +51,20 @@ export default class {
           }
         }`,
       token: token
-    };
+    }
 
     return this._gcClient.query(query)
       .then(response => {
-        logger.debug("Got all phrases for bot: " + botId);
-        return JSON.stringify({phrases: response.Bot.phrases});
+        logger.debug("Got all phrases for bot: " + botId)
+        return JSON.stringify({phrases: response.Bot.phrases})
       })
       .catch(error => {
-        throw this._errorHandler.create("getPhrases", 400, error, "Unable to get all phrases for bot: " + botId + ".");
-      });
+        throw this._errorHandler.create("getPhrases", 400, error, "Unable to get all phrases for bot: " + botId + ".")
+      })
   }
 
   addPhrase(token, botId, phrase) {
-    logger.debug("Adding a phrase to bot: " + botId);
+    logger.debug("Adding a phrase to bot: " + botId)
 
     const query = {
       query: `
@@ -76,39 +76,39 @@ export default class {
           }
         }`,
       token: token
-    };
+    }
 
     return Promise.resolve()
       .then(() => {
         if (phrase === "" || phrase.length > ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH) {
           throw this._errorHandler.create("addPhrase", 400, "", "Length of phrase must be between 0 and " +
-            ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH + ".");
+            ENV_VARS.CONSTANTS.MAX_PHRASE_TOKEN_LENGTH + ".")
         }
 
-        return "no-op";
+        return "no-op"
       })
       .then(noOp => {
         if (phrase.includes(ENV_VARS.CONSTANTS.RESPONSE_VARIABLE)) {
           throw this._errorHandler.create("addPhrase", 400, "", ENV_VARS.CONSTANTS.RESPONSE_VARIABLE +
-            " not allowed in phrase.");
+            " not allowed in phrase.")
         }
 
-        return "no-op";
+        return "no-op"
       })
       .then(noOP => this._gcClient.query(query))
       .then(response => {
-        const phrases = response.Bot.phrases;
+        const phrases = response.Bot.phrases
         if (phrases.length === 0) {
-          logger.debug("Phrase does not exists for bot: " + botId + ", creating a new one.");
-          return response;
+          logger.debug("Phrase does not exists for bot: " + botId + ", creating a new one.")
+          return response
         }
 
-        throw this._errorHandler.create("addPhrase", 400, "", "Duplicate phrase found.");
+        throw this._errorHandler.create("addPhrase", 400, "", "Duplicate phrase found.")
       })
       .then(response => this._createNewPhrase(token, botId, phrase))
       .catch(error => {
-        throw error;
-      });
+        throw error
+      })
   }
 
   _createNewPhrase(token, botId, phrase) {
@@ -120,17 +120,17 @@ export default class {
           }
         }`,
       token: token
-    };
+    }
 
     return this._gcClient.query(query)
       .then(response => {
-        logger.debug("Created phrase for bot: " + botId + ", linking phrase with the bot now..");
-        return response;
+        logger.debug("Created phrase for bot: " + botId + ", linking phrase with the bot now..")
+        return response
       })
       .then(response => this._linkPhraseToBot(token, botId, response.createPhrase.id))
       .catch(error => {
-        throw this._errorHandler.create("_createNewPhrase", 400, error, "Unable to create new phrase.");
-      });
+        throw this._errorHandler.create("_createNewPhrase", 400, error, "Unable to create new phrase.")
+      })
   }
 
   _linkPhraseToBot(token, botId, phraseId) {
@@ -150,37 +150,37 @@ export default class {
           }
         }`,
       token: token
-    };
+    }
 
     return this._gcClient.query(query)
       .then(response => {
         if (response.addToBotPhraseRelation === null) {
-          logger.warn("Did not link phrase because a connection already exists between bot and phrase.");
-          return JSON.stringify({added: false});
+          logger.warn("Did not link phrase because a connection already exists between bot and phrase.")
+          return JSON.stringify({added: false})
         }
 
-        const phraseId = response.addToBotPhraseRelation.phrasesPhrase.id;
-        logger.debug("Linked phrase: " + phraseId + " with bot: " + botId + "successfully.");
-        return JSON.stringify({added: true, id: phraseId});
+        const phraseId = response.addToBotPhraseRelation.phrasesPhrase.id
+        logger.debug("Linked phrase: " + phraseId + " with bot: " + botId + "successfully.")
+        return JSON.stringify({added: true, id: phraseId})
       })
       .catch(error => {
         throw this._errorHandler.create("_createNewPhrase", 400, error, "Unable to link phrase: " + phraseId +
-          " to bot: " + botId + ".");
-      });
+          " to bot: " + botId + ".")
+      })
   }
 
   removePhrase(token, phraseId) {
-    logger.debug("Preparing to remove phrase: " + phraseId + "..");
+    logger.debug("Preparing to remove phrase: " + phraseId + "..")
 
     return this._removeResponsesFromPhrase(token, phraseId)
       .then(response => this._removePhrase(token, phraseId))
       .catch(error => {
-        throw error;
-      });
+        throw error
+      })
   }
 
   _removeResponsesFromPhrase(token, phraseId) {
-    logger.debug("Removing responses from phrase: " + phraseId + "..");
+    logger.debug("Removing responses from phrase: " + phraseId + "..")
 
     const query = {
       query: `
@@ -192,33 +192,33 @@ export default class {
           }
         }`,
       token: token
-    };
+    }
 
     return this._gcClient.query(query)
       .then(responseGc => {
-        let responses = responseGc.Phrase.responses;
+        let responses = responseGc.Phrase.responses
 
         responses = responses.map(response => {
-          const context = this;
+          const context = this
           return Promise.resolve()
             .then(() => context._responseHandler.removeResponse(token, phraseId, response.id))
             .then(serverResponse => {
               if (JSON.parse(serverResponse).removed) {
-                return serverResponse;
+                return serverResponse
               }
-              throw serverResponse;
+              throw serverResponse
             })
             .catch(error => {
-              throw error;
-            });
-        });
+              throw error
+            })
+        })
 
-        return Promise.all(responses);
+        return Promise.all(responses)
       })
       .catch(error => {
         throw this._errorHandler.create("removeResponsesFromPhrase", 500, error, "Unable to remove one more responses" +
-          "from phrase: " + phraseId + ".");
-      });
+          "from phrase: " + phraseId + ".")
+      })
   }
 
   _removePhrase(token, phraseId) {
@@ -230,20 +230,20 @@ export default class {
             }
           }`,
       token: token
-    };
+    }
 
     return this._gcClient.query(query)
       .then(response => {
         if (response.deletePhrase === null) {
-          logger.warn("Did not remove phrase.");
-          return JSON.stringify({removed: false});
+          logger.warn("Did not remove phrase.")
+          return JSON.stringify({removed: false})
         }
 
-        logger.debug("Removed phrase.");
-        return JSON.stringify({removed: true});
+        logger.debug("Removed phrase.")
+        return JSON.stringify({removed: true})
       })
       .catch(error => {
-        throw this._errorHandler.create("_removePhrase", 500, error, "Unable to remove phrase: " + phraseId + ".");
-      });
+        throw this._errorHandler.create("_removePhrase", 500, error, "Unable to remove phrase: " + phraseId + ".")
+      })
   }
 }

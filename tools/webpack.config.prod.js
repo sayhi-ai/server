@@ -1,15 +1,15 @@
-var webpack = require('webpack');
-var CopyWebpackPlugin = require('copy-webpack-plugin');
-var fs = require('fs');
+const webpack = require('webpack')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+const fs = require('fs')
 
-var nodeModules = {};
+const nodeModules = {}
 fs.readdirSync('node_modules')
   .filter(function(x) {
-    return ['.bin'].indexOf(x) === -1;
+    return ['.bin'].indexOf(x) === -1
   })
   .forEach(function(mod) {
-    nodeModules[mod] = 'commonjs ' + mod;
-  });
+    nodeModules[mod] = 'commonjs ' + mod
+  })
 
 module.exports = {
   entry: './src/router.js',
@@ -37,4 +37,4 @@ module.exports = {
     new webpack.optimize.OccurenceOrderPlugin(),
     new webpack.optimize.UglifyJsPlugin({mangle: false, sourcemap: false})
   ]
-};
+}
