@@ -12,7 +12,7 @@ export default class {
   login(query) {
     const headers = {
       'Accept': 'application/json',
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json'
     }
     const client = new Lokka({
       transport: new HttpTransport(ENV_VARS.CONSTANTS.GRAPHCOOL_URL, {headers})

@@ -44,7 +44,7 @@ export default class {
 
   processHTMLString(html, vars) {
     let finalHtml = html
-    for (let i = 0 i < vars.length i++) {
+    for (let i = 0; i < vars.length; i++) {
       finalHtml = finalHtml.replace("$VAR" + i + "$", vars[i])
     }
 
