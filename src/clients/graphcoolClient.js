@@ -46,7 +46,7 @@ export default class {
         if (response !== undefined) {
           return response
         }
-        throw this._errorHandler.create("login", 500, "", "GraphCool query returned undefined.")
+        throw this._errorHandler.create("query", 500, "", "GraphCool query returned undefined.")
       })
       .catch(error => {
         logger.error("Error with GQ query.")
