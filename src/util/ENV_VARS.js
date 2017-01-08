@@ -25,8 +25,8 @@ const GC_ERRORS = {
 if (process.env.NODE_ENV === "production") {
   ENV_VARS = {
     ROOT: "build",
-    BASE_URL: "https://api.sayhi.ai",
-    CLIENT_URL: "https://dashboard.sayhi.ai",
+    BASE_URL: "http://server:8080",
+    CLIENT_URL: "http://dashboard:4000",
     CONSTANTS: CONSTANTS,
     GC_ERRORS: GC_ERRORS
   }
