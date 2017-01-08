@@ -1,5 +1,10 @@
 let ENV_VARS
 
+// Checks if docker replaced url correctly, otherwise jump back to dev
+const isProdUrl = url => {
+  return !url.startsWith('$')
+}
+
 const CONSTANTS = {
   GRAPHCOOL_URL: "https://api.graph.cool/simple/v1/citcyox3z0pbh0171u6i6b8nu",
   MASTER_GRAPHCOOL_TOKEN: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE" +
@@ -22,11 +27,16 @@ const GC_ERRORS = {
   USER_EXISTS: 3023
 }
 
-if (process.env.NODE_ENV === "production") {
+const SERVER_URL_PROD = "${SERVER_URL}"
+const DASHBOARD_URL_PROD = "${DASHBOARD_URL}"
+const PAGE_URL_PROD = "${PAGE_URL}"
+
+if (process.env.NODE_ENV === "production" && isProdUrl(SERVER_URL_PROD)) {
   ENV_VARS = {
     ROOT: "build",
-    BASE_URL: "https://api.sayhi.ai",
-    CLIENT_URL: "https://dashboard.sayhi.ai",
+    BASE_URL: SERVER_URL_PROD,
+    CLIENT_URL: DASHBOARD_URL_PROD,
+    LANDING_PAGE_URL: PAGE_URL_PROD,
     CONSTANTS: CONSTANTS,
     GC_ERRORS: GC_ERRORS
   }
@@ -35,6 +45,7 @@ if (process.env.NODE_ENV === "production") {
     ROOT: "dev",
     BASE_URL: "http://localhost:8080",
     CLIENT_URL: "http://localhost:4000",
+    LANDING_PAGE_URL: "http://localhost:4001",
     CONSTANTS: CONSTANTS,
     GC_ERRORS: GC_ERRORS
   }
